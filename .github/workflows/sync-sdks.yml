@@ -116,3 +116,195 @@ jobs:
           else
             echo "No changes to commit"
           fi
+  java-sdk:
+    name: Sync Java SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Java SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout Java SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-java
+          path: sdk-java
+          token: ${{ env.SDK_SYNC_TOKEN }}
+          submodules: recursive
+
+      - name: Setup Temurin 17 + Gradle cache
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle build (generate + test)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-java
+        env:
+          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+        run: |
+          ./gradlew --no-daemon clean build
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-java
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+  js-sdk:
+    name: Sync JS SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping JS SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout JS SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-js
+          path: sdk-js
+          token: ${{ env.SDK_SYNC_TOKEN }}
+          submodules: recursive
+
+      - name: Setup Node + pnpm
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Install deps
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: |
+          pnpm install
+
+      - name: Generate proto (reuse pnpm script if exists)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        env:
+          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+        run: |
+          if pnpm run | grep -q "generate"; then
+            pnpm run generate
+          else
+            echo "No pnpm generate script found; skipping."
+          fi
+
+      - name: Build SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: pnpm run build
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+  python-sdk:
+    name: Sync Python SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Python SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout Python SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-python
+          path: sdk-python
+          token: ${{ env.SDK_SYNC_TOKEN }}
+          submodules: recursive
+
+      - name: Setup Python
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Generate proto (if script exists)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        env:
+          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ -f scripts/generate_proto.py ]; then
+            python scripts/generate_proto.py
+          else
+            echo "No scripts/generate_proto.py found; skipping."
+          fi
+
+      - name: Run tests
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          if [ -f pyproject.toml ]; then
+            python -m pytest
+          else
+            echo "No tests configured; skipping."
+          fi
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
