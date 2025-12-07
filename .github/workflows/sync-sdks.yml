@@ -9,24 +9,35 @@ jobs:
   go-sdk:
     name: Sync Go SDK
     runs-on: ubuntu-latest
-    if: ${{ secrets.SDK_SYNC_TOKEN != '' }}
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
     steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Go SDK sync."
+          exit 0
+
       - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/checkout@v4
 
       - name: Checkout Go SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: cuihairu/croupier-sdk-go
           path: sdk-go
-          token: ${{ secrets.SDK_SYNC_TOKEN }}
+          token: ${{ env.SDK_SYNC_TOKEN }}
 
       - name: Setup Go
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
 
       - name: Install protoc
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
@@ -36,10 +47,11 @@ jobs:
         env:
           CROUPIER_CI_BUILD: "1"
           CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
-          SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+          SDK_SYNC_TOKEN: ${{ env.SDK_SYNC_TOKEN }}
         run: go run scripts/generate_proto.go
 
       - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-go
         run: |
           if [[ -n $(git status --porcelain) ]]; then
