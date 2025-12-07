@@ -107,7 +107,7 @@ jobs:
           CROUPIER_CI_BUILD: "1"
           CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DProtobuf_DIR=/usr/lib/x86_64-linux-gnu/cmake/protobuf
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
