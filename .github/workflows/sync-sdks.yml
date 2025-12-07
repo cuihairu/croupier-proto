@@ -109,6 +109,18 @@ jobs:
         run: |
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DProtobuf_DIR=/usr/lib/x86_64-linux-gnu/cmake/protobuf
 
+      - name: Build C++ targets (trigger proto generation)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-cpp
+        run: |
+          cmake --build build --target croupier-sdk-shared --parallel
+
+      - name: Sync generated proto artifacts
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-cpp
+        run: |
+          rsync -a --delete build/generated/ generated/
+
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
