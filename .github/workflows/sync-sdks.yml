@@ -51,6 +51,11 @@ jobs:
           SDK_SYNC_TOKEN: ${{ env.SDK_SYNC_TOKEN }}
         run: go run scripts/generate_proto.go
 
+      - name: Cleanup temp downloads
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-go
+        run: rm -rf downloaded_proto
+
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-go
@@ -102,7 +107,7 @@ jobs:
           CROUPIER_CI_BUILD: "1"
           CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
         run: |
-          cmake -S sdk -B sdk/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -267,12 +272,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install deps
+      - name: Install uv
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Sync deps via uv
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-python
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-dev.txt
+          uv pip install --system ".[dev]"
 
       - name: Generate proto (if script exists)
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -290,10 +300,10 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-python
         run: |
-          if [ -f pyproject.toml ]; then
-            python -m pytest
+          if compgen -G "tests/*.py" > /dev/null || compgen -G "tests/*/*.py" > /dev/null; then
+            uv run --system pytest
           else
-            echo "No tests configured; skipping."
+            echo "No tests directory detected; skipping."
           fi
 
       - name: Commit and push if changed

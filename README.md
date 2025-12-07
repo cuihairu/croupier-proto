@@ -48,13 +48,13 @@
 | 语言 | 仓库 | 入口 |
 | --- | --- | --- |
 | Server / Agent / Edge（主仓） | [cuihairu/croupier](https://github.com/cuihairu/croupier) | 直接引用 `proto/` 子模块（需手动 `git submodule update`） |
-| Go | [cuihairu/croupier-sdk-go](https://github.com/cuihairu/croupier-sdk-go) | `sdks/go/scripts/generate_proto.go`（已接入 workflow） |
-| C++ | [cuihairu/croupier-sdk-cpp](https://github.com/cuihairu/croupier-sdk-cpp) | CMake `ProtoGeneration.cmake`（CI 模式，已接入 workflow） |
-| Java | [cuihairu/croupier-sdk-java](https://github.com/cuihairu/croupier-sdk-java) | Gradle + `generated/` 目录（仍需手动或后续扩展 job） |
-| JS/TS | [cuihairu/croupier-sdk-js](https://github.com/cuihairu/croupier-sdk-js) | `generated/` + `pnpm`（待接入可复用的 job） |
-| Python | [cuihairu/croupier-sdk-python](https://github.com/cuihairu/croupier-sdk-python) | `generated/`（待接入） |
+| Go | [cuihairu/croupier-sdk-go](https://github.com/cuihairu/croupier-sdk-go) | `sdks/go/scripts/generate_proto.go`（workflow 自动运行） |
+| C++ | [cuihairu/croupier-sdk-cpp](https://github.com/cuihairu/croupier-sdk-cpp) | CMake `ProtoGeneration.cmake`（CI 模式，workflow 自动运行） |
+| Java | [cuihairu/croupier-sdk-java](https://github.com/cuihairu/croupier-sdk-java) | `./gradlew --no-daemon clean build`（workflow 自动运行并提交） |
+| JS/TS | [cuihairu/croupier-sdk-js](https://github.com/cuihairu/croupier-sdk-js) | `pnpm install && pnpm run generate && pnpm run build`（workflow 自动运行） |
+| Python | [cuihairu/croupier-sdk-python](https://github.com/cuihairu/croupier-sdk-python) | `uv pip install --system ".[dev]" && uv run --system pytest`（workflow 自动运行） |
 
-> 目前 workflow 中已自动推送 Go/C++ 两个 SDK，其他语言可按需补充 job。
+> Workflow 目前会在 proto 变更后自动同步主仓以及五个 SDK，保持多语言实现一致。
 
 ## 🧱 贡献流程 / Contributing
 
