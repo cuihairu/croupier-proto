@@ -119,6 +119,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
         run: |
+          mkdir -p generated
           rsync -a --delete build/generated/ generated/
 
       - name: Commit and push if changed
