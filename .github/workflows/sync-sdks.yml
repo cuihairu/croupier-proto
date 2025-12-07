@@ -125,6 +125,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
         run: |
+          git add -A generated
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
