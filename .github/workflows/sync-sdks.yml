@@ -1,0 +1,53 @@
+name: Sync SDKs
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  go-sdk:
+    name: Sync Go SDK
+    runs-on: ubuntu-latest
+    if: ${{ secrets.SDK_SYNC_TOKEN != '' }}
+    steps:
+      - name: Checkout proto repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Go SDK
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-go
+          path: sdk-go
+          token: ${{ secrets.SDK_SYNC_TOKEN }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Generate Go stubs
+        working-directory: sdk-go
+        env:
+          CROUPIER_CI_BUILD: "1"
+          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+        run: go run scripts/generate_proto.go
+
+      - name: Commit and push if changed
+        working-directory: sdk-go
+        env:
+          SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
