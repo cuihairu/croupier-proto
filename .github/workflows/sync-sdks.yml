@@ -63,3 +63,56 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+  cpp-sdk:
+    name: Sync C++ SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping C++ SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout C++ SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-cpp
+          path: sdk-cpp
+          token: ${{ env.SDK_SYNC_TOKEN }}
+          submodules: recursive
+
+      - name: Install deps (protoc + ninja + cmake)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler cmake ninja-build build-essential
+
+      - name: Generate proto via CMake
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-cpp
+        env:
+          CROUPIER_CI_BUILD: "1"
+          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+        run: |
+          cmake -S sdk -B sdk/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-cpp
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
