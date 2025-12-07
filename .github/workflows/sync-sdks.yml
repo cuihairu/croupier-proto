@@ -9,7 +9,9 @@ jobs:
   go-sdk:
     name: Sync Go SDK
     runs-on: ubuntu-latest
-    if: ${{ secrets.SDK_SYNC_TOKEN != '' }}
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    if: ${{ env.SDK_SYNC_TOKEN != '' }}
     steps:
       - name: Checkout proto repo
         uses: actions/checkout@v4
@@ -19,7 +21,7 @@ jobs:
         with:
           repository: cuihairu/croupier-sdk-go
           path: sdk-go
-          token: ${{ secrets.SDK_SYNC_TOKEN }}
+          token: ${{ env.SDK_SYNC_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -36,12 +38,11 @@ jobs:
         env:
           CROUPIER_CI_BUILD: "1"
           CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
+          SDK_SYNC_TOKEN: ${{ env.SDK_SYNC_TOKEN }}
         run: go run scripts/generate_proto.go
 
       - name: Commit and push if changed
         working-directory: sdk-go
-        env:
-          SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
