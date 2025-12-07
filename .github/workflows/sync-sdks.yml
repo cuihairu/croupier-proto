@@ -98,7 +98,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y protobuf-compiler cmake ninja-build build-essential
+          sudo apt-get install -y protobuf-compiler protobuf-compiler-grpc libgrpc++-dev libgrpc-dev libprotobuf-dev cmake ninja-build build-essential
 
       - name: Generate proto via CMake
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
