@@ -1,5 +1,7 @@
 # croupier-proto
 
+[![Sync SDKs](https://github.com/cuihairu/croupier-proto/actions/workflows/sync-sdks.yml/badge.svg)](https://github.com/cuihairu/croupier-proto/actions/workflows/sync-sdks.yml)
+
 > Croupier 平台所有 gRPC/Protobuf 契约的唯一来源（source of truth）。  
 > The canonical home for every Croupier gRPC/Protobuf contract.
 
