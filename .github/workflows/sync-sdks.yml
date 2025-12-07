@@ -165,6 +165,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-java
         run: |
+          rm -rf build .gradle
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
