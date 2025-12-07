@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Treat proto files as primary language for linguist and diffs
+*.proto diff=proto linguist-language=Protocol\ Buffer
+
+# Generated example outputs should not skew stats
+examples/** linguist-generated
