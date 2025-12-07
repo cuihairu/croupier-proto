@@ -43,6 +43,19 @@
 - 需要在本仓库设置 `SDK_SYNC_TOKEN`，一个有写各 SDK 仓库权限的 PAT。
 - 若要扩展到新的语言，只需在同一个 workflow 新增 job，并在目标 SDK 仓库实现 `scripts/generate_proto.*`（或其他约定脚本）。
 
+当前自动同步的仓库：
+
+| 语言 | 仓库 | 入口 |
+| --- | --- | --- |
+| Server / Agent / Edge（主仓） | [cuihairu/croupier](https://github.com/cuihairu/croupier) | 直接引用 `proto/` 子模块（需手动 `git submodule update`） |
+| Go | [cuihairu/croupier-sdk-go](https://github.com/cuihairu/croupier-sdk-go) | `sdks/go/scripts/generate_proto.go`（已接入 workflow） |
+| C++ | [cuihairu/croupier-sdk-cpp](https://github.com/cuihairu/croupier-sdk-cpp) | CMake `ProtoGeneration.cmake`（CI 模式，已接入 workflow） |
+| Java | [cuihairu/croupier-sdk-java](https://github.com/cuihairu/croupier-sdk-java) | Gradle + `generated/` 目录（仍需手动或后续扩展 job） |
+| JS/TS | [cuihairu/croupier-sdk-js](https://github.com/cuihairu/croupier-sdk-js) | `generated/` + `pnpm`（待接入可复用的 job） |
+| Python | [cuihairu/croupier-sdk-python](https://github.com/cuihairu/croupier-sdk-python) | `generated/`（待接入） |
+
+> 目前 workflow 中已自动推送 Go/C++ 两个 SDK，其他语言可按需补充 job。
+
 ## 🧱 贡献流程 / Contributing
 
 1. 修改 `croupier/` 下的 `.proto` 文件。
