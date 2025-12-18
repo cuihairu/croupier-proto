@@ -5,8 +5,6 @@ option java_package = "io.github.cuihairu.croupier.common.v1";
 option java_multiple_files = true;
 
 option go_package = "github.com/cuihairu/croupier/pkg/pb/croupier/common/v1;commonv1";
-option java_package = "io.github.cuihairu.croupier.common.v1";
-option java_multiple_files = true;
 
 // Generic i18n text with common languages.
 message I18nText {

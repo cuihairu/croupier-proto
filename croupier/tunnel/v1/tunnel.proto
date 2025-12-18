@@ -5,8 +5,6 @@ option java_package = "io.github.cuihairu.croupier.tunnel.v1";
 option java_multiple_files = true;
 
 option go_package = "github.com/cuihairu/croupier/pkg/pb/croupier/tunnel/v1;tunnelv1";
-option java_package = "io.github.cuihairu.croupier.tunnel.v1";
-option java_multiple_files = true;
 
 // Hello from Agent when opening the tunnel
 message Hello { string agent_id = 1; string game_id = 2; string env = 3; }
