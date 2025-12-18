@@ -53,12 +53,9 @@ jobs:
           CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
           SDK_SYNC_TOKEN: ${{ env.SDK_SYNC_TOKEN }}
         run: |
-          # Copy proto files
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-
-          # Use buf generate if buf.gen.yaml exists, otherwise use Go script
           if [ -f "buf.gen.yaml" ]; then
             buf generate proto
           elif [ -f "scripts/generate_proto.go" ]; then
@@ -113,7 +110,7 @@ jobs:
           rm -rf sdk-cpp/proto
           mkdir -p sdk-cpp/proto
           cp -r croupier sdk-cpp/proto/
-          echo "✅ Synced latest proto files to sdk-cpp/proto/"
+          echo "Synced latest proto files to sdk-cpp/proto/"
 
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -126,33 +123,27 @@ jobs:
         working-directory: sdk-cpp
         run: |
           mkdir -p generated
-
-          # Create buf.gen.yaml for C++ if not exists
           if [ ! -f "buf.gen.yaml" ]; then
-            cat > buf.gen.yaml << 'EOF'
-version: v2
-plugins:
-  - remote: buf.build/protocolbuffers/cpp
-    out: generated
-  - remote: buf.build/grpc/cpp
-    out: generated
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - remote: buf.build/protocolbuffers/cpp' \
+              '    out: generated' \
+              '  - remote: buf.build/grpc/cpp' \
+              '    out: generated' \
+              > buf.gen.yaml
           fi
-
-          # Create buf.yaml if not exists
           if [ ! -f "proto/buf.yaml" ]; then
-            cat > proto/buf.yaml << 'EOF'
-version: v2
-modules:
-  - path: croupier
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: croupier' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
           fi
-
           buf generate proto
-
-          echo "✅ Generated C++ proto files:"
+          echo "Generated C++ proto files:"
           find generated -name "*.pb.*" | head -20
 
       - name: Commit and push if changed
@@ -199,7 +190,7 @@ EOF
           rm -rf sdk-java/proto
           mkdir -p sdk-java/proto
           cp -r croupier sdk-java/proto/
-          echo "✅ Synced latest proto files to sdk-java/proto/"
+          echo "Synced latest proto files to sdk-java/proto/"
 
       - name: Setup Temurin 17
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -259,9 +250,8 @@ EOF
           rm -rf sdk-js/proto
           mkdir -p sdk-js/proto
           cp -r croupier sdk-js/proto/
-          echo "✅ Synced latest proto files to sdk-js/proto/"
+          echo "Synced latest proto files to sdk-js/proto/"
 
-      # pnpm version auto-detected from package.json packageManager field
       - name: Setup pnpm
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: pnpm/action-setup@v4
@@ -288,31 +278,25 @@ EOF
         working-directory: sdk-js
         run: |
           mkdir -p src/generated
-
-          # Create buf.gen.yaml if not exists
           if [ ! -f "buf.gen.yaml" ]; then
-            cat > buf.gen.yaml << 'EOF'
-version: v2
-plugins:
-  - local: protoc-gen-es
-    out: src/generated
-    opt:
-      - target=ts
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - local: protoc-gen-es' \
+              '    out: src/generated' \
+              '    opt:' \
+              '      - target=ts' \
+              > buf.gen.yaml
           fi
-
-          # Create buf.yaml if not exists
           if [ ! -f "proto/buf.yaml" ]; then
-            cat > proto/buf.yaml << 'EOF'
-version: v2
-modules:
-  - path: croupier
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: croupier' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
           fi
-
-          # Generate using buf
           buf generate proto || echo "Warning: buf generate failed"
 
       - name: Build SDK
@@ -363,7 +347,7 @@ EOF
           rm -rf sdk-python/proto
           mkdir -p sdk-python/proto
           cp -r croupier sdk-python/proto/
-          echo "✅ Synced latest proto files to sdk-python/proto/"
+          echo "Synced latest proto files to sdk-python/proto/"
 
       - name: Setup Python
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -395,38 +379,30 @@ EOF
         working-directory: sdk-python
         run: |
           mkdir -p src/croupier_sdk/proto
-
-          # Create buf.gen.yaml if not exists
           if [ ! -f "buf.gen.yaml" ]; then
-            cat > buf.gen.yaml << 'EOF'
-version: v2
-plugins:
-  - remote: buf.build/protocolbuffers/python
-    out: src/croupier_sdk/proto
-  - remote: buf.build/grpc/python
-    out: src/croupier_sdk/proto
-  - remote: buf.build/protocolbuffers/pyi
-    out: src/croupier_sdk/proto
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - remote: buf.build/protocolbuffers/python' \
+              '    out: src/croupier_sdk/proto' \
+              '  - remote: buf.build/grpc/python' \
+              '    out: src/croupier_sdk/proto' \
+              '  - remote: buf.build/protocolbuffers/pyi' \
+              '    out: src/croupier_sdk/proto' \
+              > buf.gen.yaml
           fi
-
-          # Create buf.yaml if not exists
           if [ ! -f "proto/buf.yaml" ]; then
-            cat > proto/buf.yaml << 'EOF'
-version: v2
-modules:
-  - path: croupier
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-EOF
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: croupier' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
           fi
-
           buf generate proto
-
-          # Create __init__.py files
           find src/croupier_sdk/proto -type d -exec touch {}/__init__.py \;
-
-          echo "✅ Generated Python proto files:"
+          echo "Generated Python proto files:"
           find src/croupier_sdk/proto -name "*.py" | head -20
 
       - name: Run tests
