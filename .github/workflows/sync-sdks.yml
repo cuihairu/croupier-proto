@@ -102,6 +102,213 @@ jobs:
             echo "No changes to commit"
           fi
 
+  python-sdk:
+    name: Sync Python SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Python SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout Python SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-python
+          path: sdk-python
+          token: ${{ env.SDK_SYNC_TOKEN }}
+
+      - name: Setup Python
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Sync proto and generate Python stubs
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
+          mkdir -p croupier/pb
+          if [ ! -f "buf.gen.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - remote: buf.build/protocolbuffers/python' \
+              '    out: croupier/pb' \
+              > buf.gen.yaml
+          fi
+          if [ ! -f "proto/buf.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: .' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
+          fi
+          buf generate proto
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+  java-sdk:
+    name: Sync Java SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Java SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout Java SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-java
+          path: sdk-java
+          token: ${{ env.SDK_SYNC_TOKEN }}
+
+      - name: Setup Java
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Sync proto files to SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          rm -rf sdk-java/proto
+          mkdir -p sdk-java/proto
+          cp -r croupier sdk-java/proto/
+          echo "Synced latest proto files to sdk-java/proto/"
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-java
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+  js-sdk:
+    name: Sync JavaScript SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping JS SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout JS SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-js
+          path: sdk-js
+          token: ${{ env.SDK_SYNC_TOKEN }}
+
+      - name: Setup Node.js
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Sync proto and generate JavaScript stubs
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: |
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
+          mkdir -p src/gen
+          if [ ! -f "buf.gen.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - remote: buf.build/eslint/typescript' \
+              '    out: src/gen' \
+              '    opt:' \
+              '      - target=ts' \
+              '      - import_extension=.ts' \
+              > buf.gen.yaml
+          fi
+          if [ ! -f "proto/buf.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: .' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
+          fi
+          buf generate proto
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
   cpp-sdk:
     name: Sync C++ SDK
     runs-on: ubuntu-latest
@@ -140,6 +347,11 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
+      - name: Install Protocol Buffers Compiler
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
       - name: Generate C++ proto files with Buf
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
@@ -171,277 +383,6 @@ jobs:
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
-        run: |
-          git add -A generated proto
-          if [[ -n $(git status --porcelain) ]]; then
-            git config user.name "croupier-bot"
-            git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
-            git push origin HEAD:main
-          else
-            echo "No changes to commit"
-          fi
-
-  java-sdk:
-    name: Sync Java SDK
-    runs-on: ubuntu-latest
-    env:
-      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
-    steps:
-      - name: Check SDK sync token
-        if: ${{ env.SDK_SYNC_TOKEN == '' }}
-        run: |
-          echo "SDK_SYNC_TOKEN secret is not configured; skipping Java SDK sync."
-          exit 0
-
-      - name: Checkout proto repo
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-
-      - name: Checkout Java SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-        with:
-          repository: cuihairu/croupier-sdk-java
-          path: sdk-java
-          token: ${{ env.SDK_SYNC_TOKEN }}
-
-      - name: Sync proto files to SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          rm -rf sdk-java/proto
-          mkdir -p sdk-java/proto
-          cp -r croupier sdk-java/proto/
-          echo "Synced latest proto files to sdk-java/proto/"
-
-      - name: Setup Temurin 17
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Gradle build (generate + test)
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-java
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon clean build
-
-      - name: Commit and push if changed
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-java
-        run: |
-          rm -rf build .gradle
-          if [[ -n $(git status --porcelain) ]]; then
-            git config user.name "croupier-bot"
-            git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
-            git push origin HEAD:main
-          else
-            echo "No changes to commit"
-          fi
-
-  js-sdk:
-    name: Sync JS SDK
-    runs-on: ubuntu-latest
-    env:
-      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
-    steps:
-      - name: Check SDK sync token
-        if: ${{ env.SDK_SYNC_TOKEN == '' }}
-        run: |
-          echo "SDK_SYNC_TOKEN secret is not configured; skipping JS SDK sync."
-          exit 0
-
-      - name: Checkout proto repo
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-
-      - name: Checkout JS SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-        with:
-          repository: cuihairu/croupier-sdk-js
-          path: sdk-js
-          token: ${{ env.SDK_SYNC_TOKEN }}
-
-      - name: Sync proto files to SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          rm -rf sdk-js/proto
-          mkdir -p sdk-js/proto
-          cp -r croupier sdk-js/proto/
-          echo "Synced latest proto files to sdk-js/proto/"
-
-      - name: Setup pnpm
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Setup Node.js
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install deps
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-js
-        run: pnpm install
-
-      - name: Install Buf CLI
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: bufbuild/buf-setup-action@v1
-        with:
-          github_token: ${{ github.token }}
-
-      - name: Generate TypeScript proto files
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-js
-        run: |
-          mkdir -p src/generated
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - local: protoc-gen-es' \
-              '    out: src/generated' \
-              '    opt:' \
-              '      - target=ts' \
-              > buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
-              > proto/buf.yaml
-          fi
-          buf generate proto || echo "Warning: buf generate failed"
-
-      - name: Build SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-js
-        run: pnpm run build
-
-      - name: Commit and push if changed
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-js
-        run: |
-          if [[ -n $(git status --porcelain) ]]; then
-            git config user.name "croupier-bot"
-            git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
-            git push origin HEAD:main
-          else
-            echo "No changes to commit"
-          fi
-
-  python-sdk:
-    name: Sync Python SDK
-    runs-on: ubuntu-latest
-    env:
-      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
-    steps:
-      - name: Check SDK sync token
-        if: ${{ env.SDK_SYNC_TOKEN == '' }}
-        run: |
-          echo "SDK_SYNC_TOKEN secret is not configured; skipping Python SDK sync."
-          exit 0
-
-      - name: Checkout proto repo
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-
-      - name: Checkout Python SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/checkout@v4
-        with:
-          repository: cuihairu/croupier-sdk-python
-          path: sdk-python
-          token: ${{ env.SDK_SYNC_TOKEN }}
-
-      - name: Sync proto files to SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          rm -rf sdk-python/proto
-          mkdir -p sdk-python/proto
-          cp -r croupier sdk-python/proto/
-          echo "Synced latest proto files to sdk-python/proto/"
-
-      - name: Setup Python
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Buf CLI
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        uses: bufbuild/buf-setup-action@v1
-        with:
-          github_token: ${{ github.token }}
-
-      - name: Install uv
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Sync deps via uv
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-python
-        run: |
-          uv pip install --system ".[dev]" || uv pip install --system .
-          uv pip install --system grpcio-tools betterproto[compiler]
-
-      - name: Generate Python proto files
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-python
-        run: |
-          mkdir -p src/croupier_sdk/proto
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - remote: buf.build/protocolbuffers/python' \
-              '    out: src/croupier_sdk/proto' \
-              '  - remote: buf.build/grpc/python' \
-              '    out: src/croupier_sdk/proto' \
-              '  - remote: buf.build/protocolbuffers/pyi' \
-              '    out: src/croupier_sdk/proto' \
-              > buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
-              > proto/buf.yaml
-          fi
-          buf generate proto
-          find src/croupier_sdk/proto -type d -exec touch {}/__init__.py \;
-          echo "Generated Python proto files:"
-          find src/croupier_sdk/proto -name "*.py" | head -20
-
-      - name: Run tests
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-python
-        run: |
-          if compgen -G "tests/*.py" > /dev/null || compgen -G "tests/*/*.py" > /dev/null; then
-            uv run --system pytest || true
-          else
-            echo "No tests directory detected; skipping."
-          fi
-
-      - name: Commit and push if changed
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-python
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
