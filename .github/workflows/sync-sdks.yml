@@ -45,22 +45,44 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
+      - name: Install Go protoc plugins
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
       - name: Sync proto and generate Go stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-go
-        env:
-          CROUPIER_CI_BUILD: "1"
-          CROUPIER_PROTO_BRANCH: ${{ github.ref_name }}
-          SDK_SYNC_TOKEN: ${{ env.SDK_SYNC_TOKEN }}
         run: |
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          if [ -f "buf.gen.yaml" ]; then
-            buf generate proto
-          elif [ -f "scripts/generate_proto.go" ]; then
-            go run scripts/generate_proto.go
+          mkdir -p pkg/pb
+          if [ ! -f "buf.gen.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'plugins:' \
+              '  - local: protoc-gen-go' \
+              '    out: pkg/pb' \
+              '    opt:' \
+              '      - paths=source_relative' \
+              '  - local: protoc-gen-go-grpc' \
+              '    out: pkg/pb' \
+              '    opt:' \
+              '      - paths=source_relative' \
+              > buf.gen.yaml
           fi
+          if [ ! -f "proto/buf.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: .' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
+          fi
+          buf generate proto
 
       - name: Cleanup temp downloads
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -137,7 +159,7 @@ jobs:
             printf '%s\n' \
               'version: v2' \
               'modules:' \
-              '  - path: croupier' \
+              '  - path: .' \
               'deps:' \
               '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
               > proto/buf.yaml
@@ -255,6 +277,8 @@ jobs:
       - name: Setup pnpm
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -292,7 +316,7 @@ jobs:
             printf '%s\n' \
               'version: v2' \
               'modules:' \
-              '  - path: croupier' \
+              '  - path: .' \
               'deps:' \
               '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
               > proto/buf.yaml
@@ -395,7 +419,7 @@ jobs:
             printf '%s\n' \
               'version: v2' \
               'modules:' \
-              '  - path: croupier' \
+              '  - path: .' \
               'deps:' \
               '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
               > proto/buf.yaml
