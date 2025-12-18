@@ -3,10 +3,7 @@ syntax = "proto3";
 package croupier.agent.local.v1;
 option java_package = "io.github.cuihairu.croupier.agent.local.v1";
 option java_multiple_files = true;
-
 option go_package = "github.com/cuihairu/croupier/pkg/pb/croupier/agent/local/v1;localv1";
-option java_package = "io.github.cuihairu.croupier.agent.local.v1";
-option java_multiple_files = true;
 
 // Local function registration from game servers to Agent
 message LocalFunctionDescriptor {
