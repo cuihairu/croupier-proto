@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package examples.integrations.prom.v1;
+option java_package = "io.github.cuihairu.croupier.examples.integrations.prom.v1";
 
 import "croupier/options/v1/function.proto";
 import "croupier/options/v1/ui.proto";
