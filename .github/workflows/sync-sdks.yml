@@ -58,21 +58,20 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
+          rm -rf pkg/pb
           mkdir -p pkg/pb
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - local: protoc-gen-go' \
-              '    out: pkg/pb' \
-              '    opt:' \
-              '      - paths=source_relative' \
-              '  - local: protoc-gen-go-grpc' \
-              '    out: pkg/pb' \
-              '    opt:' \
-              '      - paths=source_relative' \
-              > buf.gen.yaml
-          fi
+          printf '%s\n' \
+            'version: v2' \
+            'plugins:' \
+            '  - local: protoc-gen-go' \
+            '    out: pkg/pb' \
+            '    opt:' \
+            '      - paths=source_relative' \
+            '  - local: protoc-gen-go-grpc' \
+            '    out: pkg/pb' \
+            '    opt:' \
+            '      - paths=source_relative' \
+            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -96,7 +95,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
           else
             echo "No changes to commit"
@@ -145,15 +145,14 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
+          rm -rf croupier/pb
           mkdir -p croupier/pb
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - remote: buf.build/protocolbuffers/python' \
-              '    out: croupier/pb' \
-              > buf.gen.yaml
-          fi
+          printf '%s\n' \
+            'version: v2' \
+            'plugins:' \
+            '  - remote: buf.build/protocolbuffers/python' \
+            '    out: croupier/pb' \
+            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -172,7 +171,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
           else
             echo "No changes to commit"
@@ -224,7 +224,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
           else
             echo "No changes to commit"
@@ -273,18 +274,17 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
+          rm -rf src/gen
           mkdir -p src/gen
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - remote: buf.build/eslint/typescript' \
-              '    out: src/gen' \
-              '    opt:' \
-              '      - target=ts' \
-              '      - import_extension=.ts' \
-              > buf.gen.yaml
-          fi
+          printf '%s\n' \
+            'version: v2' \
+            'plugins:' \
+            '  - remote: buf.build/bufbuild/es' \
+            '    out: src/gen' \
+            '    opt:' \
+            '      - target=ts' \
+            '      - import_extension=.ts' \
+            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -303,7 +303,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
           else
             echo "No changes to commit"
@@ -356,17 +357,16 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
         run: |
+          rm -rf generated
           mkdir -p generated
-          if [ ! -f "buf.gen.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'plugins:' \
-              '  - remote: buf.build/protocolbuffers/cpp' \
-              '    out: generated' \
-              '  - remote: buf.build/grpc/cpp' \
-              '    out: generated' \
-              > buf.gen.yaml
-          fi
+          printf '%s\n' \
+            'version: v2' \
+            'plugins:' \
+            '  - remote: buf.build/protocolbuffers/cpp' \
+            '    out: generated' \
+            '  - remote: buf.build/grpc/cpp' \
+            '    out: generated' \
+            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -387,7 +387,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git commit -am "chore: sync proto from ${GITHUB_SHA}"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
           else
             echo "No changes to commit"
