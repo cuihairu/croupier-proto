@@ -27,6 +27,15 @@ message FunctionDescriptor {
   croupier.common.v1.PermissionSpec permissions = 24;
 }
 
+// Process/service instance registered to an agent (e.g. a game server process).
+message AgentProcess {
+  string service_id = 1;          // unique id from SDK
+  string addr = 2;                // reachable address (agent-local)
+  string version = 3;             // process/service version
+  int64 last_seen_unix = 4;       // unix seconds
+  repeated string function_ids = 5; // functions exposed by this process
+}
+
 // Agent Registration Request
 message RegisterRequest {
   string agent_id = 1;              // agent unique id
@@ -35,6 +44,7 @@ message RegisterRequest {
   string rpc_addr = 4;              // agent's reachable gRPC address (DEV ONLY)
   string game_id = 5;               // game scope (required for multi-game)
   string env = 6;                   // environment (optional: prod/stage/test)
+  repeated AgentProcess processes = 7; // registered processes (sdk->agent)
 }
 
 // Agent Registration Response
