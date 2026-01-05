@@ -1,8 +1,4 @@
-# yaml-language-server: $schema=https://buf.build/docs/configuration/v2/buf-yaml
-version: v2
-modules:
-  - path: .
-    name: buf.build/your-org/croupier
+version: v1
 lint:
   use:
     - STANDARD
