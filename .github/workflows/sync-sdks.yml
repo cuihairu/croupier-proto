@@ -411,3 +411,98 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+  csharp-sdk:
+    name: Sync C# SDK
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping C# SDK sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout C# SDK
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/croupier-sdk-csharp
+          path: sdk-csharp
+          token: ${{ env.SDK_SYNC_TOKEN }}
+
+      - name: Setup .NET
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+
+      - name: Install dotnet-grpc protoc plugin
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          dotnet tool install --global Grpc.Tools
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Sync proto and generate C# stubs
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-csharp
+        run: |
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
+          rm -rf src/Gen
+          mkdir -p src/Gen
+          printf '%s\n' \
+            'version: v2' \
+            'plugins:' \
+            '  - local: grpc_csharp_plugin' \
+            '    out: src/Gen' \
+            '    opt:' \
+            '      - base_namespace=Croupier.Sdk.Gen' \
+            '  - local: protoc-gen-grpc' \
+            '    out: src/Gen' \
+            '    opt:' \
+            '      - base_namespace=Croupier.Sdk.Gen' \
+            > buf.gen.yaml
+          if [ ! -f "proto/buf.yaml" ]; then
+            printf '%s\n' \
+              'version: v2' \
+              'modules:' \
+              '  - path: .' \
+              'deps:' \
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+              > proto/buf.yaml
+          fi
+          buf generate proto
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-csharp
+        run: |
+          echo "Generated C# proto files:"
+          find src/Gen -name "*.cs" | head -20
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-csharp
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
