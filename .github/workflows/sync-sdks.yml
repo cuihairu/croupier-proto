@@ -73,7 +73,7 @@ jobs:
           rm -rf pkg/pb
           mkdir -p pkg/pb
           printf '%s\n' \
-            'version: v2' \
+            'version: v1' \
             'plugins:' \
             '  - local: protoc-gen-go' \
             '    out: pkg/pb' \
@@ -86,7 +86,7 @@ jobs:
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v2' \
+              'version: v1' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -161,14 +161,14 @@ jobs:
           rm -rf croupier/pb
           mkdir -p croupier/pb
           printf '%s\n' \
-            'version: v2' \
+            'version: v1' \
             'plugins:' \
             '  - remote: buf.build/protocolbuffers/python' \
             '    out: croupier/pb' \
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v2' \
+              'version: v1' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -291,7 +291,7 @@ jobs:
           rm -rf src/gen
           mkdir -p src/gen
           printf '%s\n' \
-            'version: v2' \
+            'version: v1' \
             'plugins:' \
             '  - remote: buf.build/bufbuild/es' \
             '    out: src/gen' \
@@ -301,7 +301,7 @@ jobs:
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v2' \
+              'version: v1' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -361,8 +361,8 @@ jobs:
         run: |
           # Clone vcpkg with protobuf 5.29.5 locked
           git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg ~/vcpkg
-          ~/vcpkg/vcpkg install protobuf:x64-linux
-          echo "VCPKG_ROOT=~/vcpkg" >> $GITHUB_ENV
+          $HOME/vcpkg/vcpkg install protobuf:x64-linux
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
           echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
 
       - name: Verify protoc version
@@ -379,11 +379,11 @@ jobs:
           mkdir -p generated
 
           # Find grpc plugin installed by vcpkg
-          GRPC_PLUGIN=$(find ~/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
+          GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
           if [ -z "$GRPC_PLUGIN" ]; then
             echo "Installing grpc plugin via vcpkg..."
-            ~/vcpkg/vcpkg install grpc:x64-linux
-            GRPC_PLUGIN=$(find ~/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
+            $HOME/vcpkg/vcpkg install grpc:x64-linux
+            GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
           fi
           echo "Using gRPC plugin: $GRPC_PLUGIN"
 
@@ -448,11 +448,10 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
-      - name: Install dotnet-grpc protoc plugin
+      - name: Install C# buf plugin
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          dotnet tool install --global Grpc.Tools
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+          buf beta registry plugin install buf.build/grpc/csharp:v1.3.0
 
       - name: Sync proto and generate C# stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -464,20 +463,16 @@ jobs:
           rm -rf src/Gen
           mkdir -p src/Gen
           printf '%s\n' \
-            'version: v2' \
+            'version: v1' \
             'plugins:' \
-            '  - local: grpc_csharp_plugin' \
-            '    out: src/Gen' \
-            '    opt:' \
-            '      - base_namespace=Croupier.Sdk.Gen' \
-            '  - local: protoc-gen-grpc' \
+            '  - remote: buf.build/grpc/csharp' \
             '    out: src/Gen' \
             '    opt:' \
             '      - base_namespace=Croupier.Sdk.Gen' \
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v2' \
+              'version: v1' \
               'modules:' \
               '  - path: .' \
               'deps:' \
