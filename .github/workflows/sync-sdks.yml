@@ -382,17 +382,16 @@ jobs:
           fi
 
           # Create buf.gen.yaml to use vcpkg protoc and grpc plugin
-          cat > proto/buf.gen.yaml <<GENEOF
-version: v2
-plugins:
-  - protoc_builtin: cpp
-    protoc_path: /usr/local/bin/protoc
-    out: ../generated
-  - plugin: grpc
-    path: PLACEHOLDER
-    out: ../generated
-GENEOF
-          sed -i "s|PLACEHOLDER|$GRPC_PLUGIN|" proto/buf.gen.yaml
+          printf '%s\\n' \\
+            'version: v2' \\
+            'plugins:' \\
+            '  - protoc_builtin: cpp' \\
+            '    protoc_path: /usr/local/bin/protoc' \\
+            '    out: ../generated' \\
+            '  - plugin: grpc' \\
+            '    path: GRPC_PATH' \\
+            '    out: ../generated' \\
+            | sed "s|GRPC_PATH|$GRPC_PLUGIN|" > proto/buf.gen.yaml
 
           buf generate proto
 
