@@ -487,6 +487,8 @@ jobs:
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
+            # Configure git to use token for push
+            git remote set-url origin https://x-access-token:${{ env.SDK_SYNC_TOKEN }}@github.com/cuihairu/croupier-sdk-csharp.git
             git add -A
             git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
