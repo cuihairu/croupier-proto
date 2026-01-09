@@ -335,7 +335,8 @@ jobs:
         run: |
           # Clone vcpkg with protobuf 5.29.5 locked
           git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg $HOME/vcpkg
-          $HOME/vcpkg/vcpkg install protobuf:x64-linux
+          $HOME/vcpkg/bootstrap-vcpkg.sh
+          $HOME/vcpkg/vcpkg install protobuf:x64-linux grpc:x64-linux
           echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
           echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
 
