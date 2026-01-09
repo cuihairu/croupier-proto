@@ -55,10 +55,6 @@ jobs:
       - name: Install Go protoc plugins (locked versions)
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          # Lock to specific versions for reproducibility
-          # protoc-gen-go v1.36.0 (regenerated with protoc v29.1, compatible with protobuf 5.29.5)
-          # protoc-gen-go-grpc v1.3.0
-          # Source: https://github.com/protocolbuffers/protobuf-go/releases/tag/v1.36.0
           go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.0
           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
           protoc-gen-go --version
@@ -74,13 +70,11 @@ jobs:
           rm -rf pkg/pb
           mkdir -p pkg/pb
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
-              > proto/buf.yaml
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
 
@@ -150,13 +144,11 @@ jobs:
           rm -rf croupier/pb
           mkdir -p croupier/pb
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
-              > proto/buf.yaml
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
 
@@ -279,7 +271,6 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-js
         run: |
-          # Add node_modules/.bin to PATH for protoc-gen-es
           export PATH="$PWD/node_modules/.bin:$PATH"
           rm -rf proto
           mkdir -p proto
@@ -287,13 +278,11 @@ jobs:
           rm -rf src/gen
           mkdir -p src/gen
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
-              > proto/buf.yaml
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
 
@@ -351,19 +340,14 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-
           if [ ! -f "proto/buf.yaml" ]; then
-            cat > proto/buf.yaml <<BUFYAML
-version: v2
-modules:
-  - path: .
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-BUFYAML
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
-
           buf generate proto
-
           echo "Generated C++ proto files:"
           find generated -name "*.pb.*" | head -20
 
@@ -428,13 +412,11 @@ BUFYAML
           rm -rf src/Gen
           mkdir -p src/Gen
           if [ ! -f "proto/buf.yaml" ]; then
-            cat > proto/buf.yaml <<BUFYAML
-version: v2
-modules:
-  - path: .
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-BUFYAML
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
 
@@ -452,7 +434,6 @@ BUFYAML
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            # Configure git to use token for push
             git remote set-url origin https://x-access-token:${{ env.SDK_SYNC_TOKEN }}@github.com/cuihairu/croupier-sdk-csharp.git
             git add -A
             git commit -m "chore: sync proto from ${GITHUB_SHA}"
