@@ -49,7 +49,7 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
-          version: "1.28.1"
+          version: "1.42.0"
 
       - name: Install Go protoc plugins (locked versions)
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -73,7 +73,7 @@ jobs:
           rm -rf pkg/pb
           mkdir -p pkg/pb
           printf '%s\n' \
-            'version: v1' \
+            'version: v2' \
             'plugins:' \
             '  - local: protoc-gen-go' \
             '    out: pkg/pb' \
@@ -86,7 +86,7 @@ jobs:
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v1' \
+              'version: v2' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -149,7 +149,7 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
-          version: "1.28.1"
+          version: "1.42.0"
 
       - name: Sync proto and generate Python stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -161,14 +161,14 @@ jobs:
           rm -rf croupier/pb
           mkdir -p croupier/pb
           printf '%s\n' \
-            'version: v1' \
+            'version: v2' \
             'plugins:' \
             '  - remote: buf.build/protocolbuffers/python' \
             '    out: croupier/pb' \
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v1' \
+              'version: v2' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -279,7 +279,7 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
-          version: "1.28.1"
+          version: "1.42.0"
 
       - name: Sync proto and generate JavaScript stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -291,7 +291,7 @@ jobs:
           rm -rf src/gen
           mkdir -p src/gen
           printf '%s\n' \
-            'version: v1' \
+            'version: v2' \
             'plugins:' \
             '  - remote: buf.build/bufbuild/es' \
             '    out: src/gen' \
@@ -301,7 +301,7 @@ jobs:
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v1' \
+              'version: v2' \
               'modules:' \
               '  - path: .' \
               'deps:' \
@@ -448,10 +448,12 @@ jobs:
         with:
           github_token: ${{ github.token }}
 
-      - name: Install C# buf plugin
+      - name: Install Google.Protobuf.Tools
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          buf beta registry plugin install buf.build/grpc/csharp:v1.3.0
+          dotnet tool install --global Google.Protobuf.Tools
+          dotnet tool install --global Grpc.Tools
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Sync proto and generate C# stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -463,16 +465,20 @@ jobs:
           rm -rf src/Gen
           mkdir -p src/Gen
           printf '%s\n' \
-            'version: v1' \
+            'version: v2' \
             'plugins:' \
-            '  - remote: buf.build/grpc/csharp' \
+            '  - local: grpc_csharp_plugin' \
+            '    out: src/Gen' \
+            '    opt:' \
+            '      - base_namespace=Croupier.Sdk.Gen' \
+            '  - local: protoc-gen-grpc' \
             '    out: src/Gen' \
             '    opt:' \
             '      - base_namespace=Croupier.Sdk.Gen' \
             > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
-              'version: v1' \
+              'version: v2' \
               'modules:' \
               '  - path: .' \
               'deps:' \
