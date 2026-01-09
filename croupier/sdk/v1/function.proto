@@ -44,7 +44,7 @@ message CancelJobRequest {
 
 // SDK Function Service - Main interface for invoking functions
 // This is what SDK developers will use to call game functions
-service FunctionService {
+service FunctionClientService {
   // Synchronous function invocation
   rpc Invoke(InvokeRequest) returns (InvokeResponse);
 
