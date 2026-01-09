@@ -8,9 +8,10 @@ on:
 # All SDKs use locked protobuf versions for reproducible builds:
 # - C++: vcpkg protoc 5.29.5 (locked via vcpkg branch 2025.01.13)
 # - Go: protoc-gen-go@v1.36.0 (regenerated with protoc v29.1)
-# - Python: Buf CLI v1.28.1 with protocolbuffers/python plugin
-# - JS: Buf CLI v1.28.1 with bufbuild/es plugin
+# - Python: Buf CLI v1.59.0 with protocolbuffers/python plugin
+# - JS: Buf CLI v1.59.0 with bufbuild/es plugin
 # - Java: Gradle protobuf plugin 0.9.4 with protoc 4.29.1 (Java equivalent of 5.29.5)
+# - C#: Buf CLI v1.59.0 with protoc_builtin csharp
 # DO NOT install system protobuf-compiler (apt) - it's outdated (3.21.x)
 
 jobs:
@@ -72,18 +73,6 @@ jobs:
           cp -r ../croupier proto/
           rm -rf pkg/pb
           mkdir -p pkg/pb
-          printf '%s\n' \
-            'version: v2' \
-            'plugins:' \
-            '  - local: protoc-gen-go' \
-            '    out: pkg/pb' \
-            '    opt:' \
-            '      - paths=source_relative' \
-            '  - local: protoc-gen-go-grpc' \
-            '    out: pkg/pb' \
-            '    opt:' \
-            '      - paths=source_relative' \
-            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -160,12 +149,6 @@ jobs:
           cp -r ../croupier proto/
           rm -rf croupier/pb
           mkdir -p croupier/pb
-          printf '%s\n' \
-            'version: v2' \
-            'plugins:' \
-            '  - remote: buf.build/protocolbuffers/python' \
-            '    out: croupier/pb' \
-            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -290,15 +273,6 @@ jobs:
           cp -r ../croupier proto/
           rm -rf src/gen
           mkdir -p src/gen
-          printf '%s\n' \
-            'version: v2' \
-            'plugins:' \
-            '  - remote: buf.build/bufbuild/es' \
-            '    out: src/gen' \
-            '    opt:' \
-            '      - target=ts' \
-            '      - import_extension=.ts' \
-            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
@@ -360,7 +334,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
           # Clone vcpkg with protobuf 5.29.5 locked
-          git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg ~/vcpkg
+          git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg $HOME/vcpkg
           $HOME/vcpkg/vcpkg install protobuf:x64-linux
           echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
           echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
@@ -464,18 +438,6 @@ jobs:
           cp -r ../croupier proto/
           rm -rf src/Gen
           mkdir -p src/Gen
-          printf '%s\n' \
-            'version: v2' \
-            'plugins:' \
-            '  - local: grpc_csharp_plugin' \
-            '    out: src/Gen' \
-            '    opt:' \
-            '      - base_namespace=Croupier.Sdk.Gen' \
-            '  - local: protoc-gen-grpc' \
-            '    out: src/Gen' \
-            '    opt:' \
-            '      - base_namespace=Croupier.Sdk.Gen' \
-            > buf.gen.yaml
           if [ ! -f "proto/buf.yaml" ]; then
             printf '%s\n' \
               'version: v2' \
