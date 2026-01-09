@@ -5,11 +5,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# All SDKs use locked protobuf versions for reproducible builds:
-# - All SDKs: Buf CLI v1.59.0 for unified workflow
-# - C++/C#: vcpkg protoc 5.29.5 (locked via vcpkg branch 2025.01.13)
-# - Go: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0
-# - Python/JS: protocolbuffers plugins
+# All SDKs use Buf CLI v1.59.0 with remote plugins for unified proto generation:
+# - Go: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0 (local)
+# - Python: buf.build/protocolbuffers/python (remote)
+# - JS: @bufbuild/protoc-gen-es (local via npm)
+# - C++: buf.build/protocolbuffers/cpp + buf.build/grpc/cpp (remote)
+# - C#: buf.build/protocolbuffers/csharp (remote)
 # - Java: Gradle protobuf plugin (sync proto files only)
 # DO NOT install system protobuf-compiler (apt) - it's outdated (3.21.x)
 
@@ -334,22 +335,6 @@ jobs:
           path: sdk-cpp
           token: ${{ env.SDK_SYNC_TOKEN }}
 
-      - name: Setup vcpkg and install protoc 5.29.5
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          # Clone vcpkg with protobuf 5.29.5 locked
-          git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg $HOME/vcpkg
-          $HOME/vcpkg/bootstrap-vcpkg.sh
-          $HOME/vcpkg/vcpkg install protobuf:x64-linux grpc:x64-linux
-          echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
-          echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
-
-      - name: Verify protoc version
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          protoc --version
-          echo "Expected: 5.29.5"
-
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: bufbuild/buf-setup-action@v1
@@ -361,10 +346,6 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
         run: |
-          # Find grpc plugin installed by vcpkg
-          GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
-          echo "Using gRPC plugin: $GRPC_PLUGIN"
-
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
@@ -380,18 +361,6 @@ jobs:
               '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \\
               > proto/buf.yaml
           fi
-
-          # Create buf.gen.yaml to use vcpkg protoc and grpc plugin
-          printf '%s\\n' \\
-            'version: v2' \\
-            'plugins:' \\
-            '  - protoc_builtin: cpp' \\
-            '    protoc_path: /usr/local/bin/protoc' \\
-            '    out: ../generated' \\
-            '  - plugin: grpc' \\
-            '    path: GRPC_PATH' \\
-            '    out: ../generated' \\
-            | sed "s|GRPC_PATH|$GRPC_PLUGIN|" > proto/buf.gen.yaml
 
           buf generate proto
 
@@ -442,22 +411,6 @@ jobs:
         with:
           dotnet-version: '8.0'
 
-      - name: Setup vcpkg and install protoc 5.29.5
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          # Clone vcpkg with protobuf 5.29.5 locked
-          git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg $HOME/vcpkg
-          $HOME/vcpkg/bootstrap-vcpkg.sh
-          $HOME/vcpkg/vcpkg install protobuf:x64-linux
-          echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
-          echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
-
-      - name: Verify protoc version
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          protoc --version
-          echo "Expected: 5.29.5"
-
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: bufbuild/buf-setup-action@v1
@@ -475,12 +428,12 @@ jobs:
           rm -rf src/Gen
           mkdir -p src/Gen
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\n' \
-              'version: v2' \
-              'modules:' \
-              '  - path: .' \
-              'deps:' \
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \
+            printf '%s\\n' \\
+              'version: v2' \\
+              'modules:' \\
+              '  - path: .' \\
+              'deps:' \\
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \\
               > proto/buf.yaml
           fi
           buf generate proto
