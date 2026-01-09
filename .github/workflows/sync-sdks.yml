@@ -6,12 +6,11 @@ on:
   workflow_dispatch:
 
 # All SDKs use locked protobuf versions for reproducible builds:
-# - C++: vcpkg protoc 5.29.5 (locked via vcpkg branch 2025.01.13)
-# - Go: protoc-gen-go@v1.36.0 (regenerated with protoc v29.1)
-# - Python: Buf CLI v1.59.0 with protocolbuffers/python plugin
-# - JS: Buf CLI v1.59.0 with bufbuild/es plugin
-# - Java: Gradle protobuf plugin 0.9.4 with protoc 4.29.1 (Java equivalent of 5.29.5)
-# - C#: Buf CLI v1.59.0 with protoc_builtin csharp
+# - All SDKs: Buf CLI v1.59.0 for unified workflow
+# - C++/C#: vcpkg protoc 5.29.5 (locked via vcpkg branch 2025.01.13)
+# - Go: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0
+# - Python/JS: protocolbuffers plugins
+# - Java: Gradle protobuf plugin (sync proto files only)
 # DO NOT install system protobuf-compiler (apt) - it's outdated (3.21.x)
 
 jobs:
@@ -335,14 +334,6 @@ jobs:
           path: sdk-cpp
           token: ${{ env.SDK_SYNC_TOKEN }}
 
-      - name: Sync proto files to SDK
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          rm -rf sdk-cpp/proto
-          mkdir -p sdk-cpp/proto
-          cp -r croupier sdk-cpp/proto/
-          echo "Synced latest proto files to sdk-cpp/proto/"
-
       - name: Setup vcpkg and install protoc 5.29.5
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
@@ -359,29 +350,51 @@ jobs:
           protoc --version
           echo "Expected: 5.29.5"
 
-      - name: Generate C++ proto files with vcpkg protoc 5.29.5
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+          version: "1.59.0"
+
+      - name: Sync proto and generate C++ stubs with buf
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-cpp
         run: |
+          # Find grpc plugin installed by vcpkg
+          GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
+          echo "Using gRPC plugin: $GRPC_PLUGIN"
+
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
 
-          # Find grpc plugin installed by vcpkg
-          GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
-          if [ -z "$GRPC_PLUGIN" ]; then
-            echo "Installing grpc plugin via vcpkg..."
-            $HOME/vcpkg/vcpkg install grpc:x64-linux
-            GRPC_PLUGIN=$(find $HOME/vcpkg/installed -name grpc_cpp_plugin -type f 2>/dev/null | head -1)
+          if [ ! -f "proto/buf.yaml" ]; then
+            printf '%s\\n' \\
+              'version: v2' \\
+              'modules:' \\
+              '  - path: .' \\
+              'deps:' \\
+              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \\
+              > proto/buf.yaml
           fi
-          echo "Using gRPC plugin: $GRPC_PLUGIN"
 
-          # Generate proto files
-          protoc \
-            --proto_path=proto \
-            --cpp_out=generated \
-            --grpc_out=generated \
-            --plugin=protoc-gen-grpc="$GRPC_PLUGIN" \
-            $(find proto -name "*.proto")
+          # Create buf.gen.yaml to use vcpkg protoc and grpc plugin
+          cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - protoc_builtin: cpp
+    protoc_path: /usr/local/bin/protoc
+    out: ../generated
+  - plugin: grpc
+    path: __GRPC_PLUGIN__
+    out: ../generated
+EOF
+          sed -i "s|__GRPC_PLUGIN__|$GRPC_PLUGIN|" proto/buf.gen.yaml
+
+          buf generate proto
 
           echo "Generated C++ proto files:"
           find generated -name "*.pb.*" | head -20
