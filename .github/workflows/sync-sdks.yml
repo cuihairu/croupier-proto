@@ -353,13 +353,13 @@ jobs:
           mkdir -p generated
 
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\\n' \\
-              'version: v2' \\
-              'modules:' \\
-              '  - path: .' \\
-              'deps:' \\
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \\
-              > proto/buf.yaml
+            cat > proto/buf.yaml <<BUFYAML
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v29.3
+BUFYAML
           fi
 
           buf generate proto
@@ -428,13 +428,13 @@ jobs:
           rm -rf src/Gen
           mkdir -p src/Gen
           if [ ! -f "proto/buf.yaml" ]; then
-            printf '%s\\n' \\
-              'version: v2' \\
-              'modules:' \\
-              '  - path: .' \\
-              'deps:' \\
-              '  - buf.build/protocolbuffers/wellknowntypes:v29.3' \\
-              > proto/buf.yaml
+            cat > proto/buf.yaml <<BUFYAML
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v29.3
+BUFYAML
           fi
           buf generate proto
 
