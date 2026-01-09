@@ -279,6 +279,8 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-js
         run: |
+          # Add node_modules/.bin to PATH for protoc-gen-es
+          export PATH="$PWD/node_modules/.bin:$PATH"
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
