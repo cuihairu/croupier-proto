@@ -264,6 +264,17 @@ jobs:
           github_token: ${{ github.token }}
           version: "1.59.0"
 
+      - name: Install pnpm
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: pnpm install
+
       - name: Sync proto and generate JavaScript stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-js
@@ -422,13 +433,15 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
+          version: "1.59.0"
 
-      - name: Install Google.Protobuf.Tools
+      - name: Install grpc tools
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          dotnet tool install --global Google.Protobuf.Tools
-          dotnet tool install --global Grpc.Tools
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+          # Install protoc and grpc C# plugin from apt
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler grpc-csharp-plugin
+          protoc --version
 
       - name: Sync proto and generate C# stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
