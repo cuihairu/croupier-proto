@@ -428,20 +428,28 @@ jobs:
         with:
           dotnet-version: '8.0'
 
+      - name: Setup vcpkg and install protoc 5.29.5
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          # Clone vcpkg with protobuf 5.29.5 locked
+          git clone --depth=1 --branch=2025.01.13 https://github.com/microsoft/vcpkg $HOME/vcpkg
+          $HOME/vcpkg/bootstrap-vcpkg.sh
+          $HOME/vcpkg/vcpkg install protobuf:x64-linux
+          echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+          echo "$HOME/vcpkg/installed/x64-linux/tools/protobuf" >> $GITHUB_PATH
+
+      - name: Verify protoc version
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          protoc --version
+          echo "Expected: 5.29.5"
+
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: bufbuild/buf-setup-action@v1
         with:
           github_token: ${{ github.token }}
           version: "1.59.0"
-
-      - name: Install grpc tools
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          # Install protoc and grpc C# plugin from apt
-          sudo apt-get update
-          sudo apt-get install -y protobuf-compiler grpc-csharp-plugin
-          protoc --version
 
       - name: Sync proto and generate C# stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
