@@ -238,18 +238,7 @@ jobs:
           rm -rf generated
           mkdir -p generated
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            cat > proto/buf.gen.yaml << 'EOF'
-version: v1
-plugins:
-  - name: java
-    out: generated
-    opt:
-      - paths=source_relative
-  - local: protoc-gen-grpc-java
-    out: generated
-    opt:
-      - paths=source_relative
-EOF
+            printf 'version: v1\nplugins:\n  - name: java\n    out: generated\n    opt:\n      - paths=source_relative\n  - local: protoc-gen-grpc-java\n    out: generated\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
@@ -341,20 +330,7 @@ EOF
           rm -rf generated
           mkdir -p generated
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            cat > proto/buf.gen.yaml << 'EOF'
-version: v2
-plugins:
-  - local: protoc-gen-es
-    out: generated
-    opt:
-      - target=ts
-      - import_extension=.ts
-  - local: protoc-gen-connect-es
-    out: generated
-    opt:
-      - target=ts
-      - import_extension=.ts
-EOF
+            printf 'version: v2\nplugins:\n  - local: protoc-gen-es\n    out: generated\n    opt:\n      - target=ts\n      - import_extension=.ts\n  - local: protoc-gen-connect-es\n    out: generated\n    opt:\n      - target=ts\n      - import_extension=.ts\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
@@ -503,14 +479,7 @@ EOF
           rm -rf generated
           mkdir -p generated
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            cat > proto/buf.gen.yaml << 'EOF'
-version: v1
-plugins:
-  - name: csharp
-    out: generated
-    opt:
-      - paths=source_relative
-EOF
+            printf 'version: v1\nplugins:\n  - name: csharp\n    out: generated\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
