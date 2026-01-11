@@ -46,6 +46,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache: false
 
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -516,6 +517,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
+          cache: false
 
       - name: Install Buf CLI
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
