@@ -1,0 +1,10 @@
+version: v2
+plugins:
+  - local: protoc-gen-doc
+    out: docs
+    opt:
+      - markdown,proto-api.md
+  - local: protoc-gen-doc
+    out: docs
+    opt:
+      - html,proto-api.html
