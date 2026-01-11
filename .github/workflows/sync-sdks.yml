@@ -531,18 +531,14 @@ jobs:
         run: |
           rm -rf proto
           mkdir -p proto
+          # 复制所有 proto 定义（croupier 和 examples）
           cp -r ../croupier proto/
+          cp -r ../examples proto/
+          cp ../buf.yaml proto/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
           if [ ! -f "proto/buf.gen.yaml" ]; then
             printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto --template proto/buf.gen.yaml
 
