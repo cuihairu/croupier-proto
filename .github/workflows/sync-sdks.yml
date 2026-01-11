@@ -219,11 +219,22 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
           GRPC_JAVA_VERSION="1.68.1"
-          curl -sSL "https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-all.jar" -o /tmp/protoc-gen-grpc-java.jar
-          chmod +x /tmp/protoc-gen-grpc-java.jar
+          GRPC_JAR_URL="https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-all.jar"
+          echo "Downloading grpc-java plugin from: ${GRPC_JAR_URL}"
+          curl -fSL "${GRPC_JAR_URL}" -o /tmp/protoc-gen-grpc-java.jar
+          # Verify jar file is valid (check for zip magic number and non-zero size)
+          if [ ! -s /tmp/protoc-gen-grpc-java.jar ]; then
+            echo "Error: Downloaded jar file is empty"
+            exit 1
+          fi
+          if ! file /tmp/protoc-gen-grpc-java.jar | grep -q "Zip archive"; then
+            echo "Error: Downloaded file is not a valid jar/zip archive"
+            file /tmp/protoc-gen-grpc-java.jar
+            exit 1
+          fi
           # Create plugin script
           echo '#!/bin/sh' > /tmp/protoc-gen-grpc-java
-          echo 'java -jar /tmp/protoc-gen-grpc-java.jar "$@"' >> /tmp/protoc-gen-grpc-java
+          echo 'exec java -jar /tmp/protoc-gen-grpc-java.jar "$@"' >> /tmp/protoc-gen-grpc-java
           chmod +x /tmp/protoc-gen-grpc-java
           export PATH="/tmp:$PATH"
           protoc-gen-grpc-java --version
@@ -479,7 +490,7 @@ jobs:
           rm -rf generated
           mkdir -p generated
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v1\nplugins:\n  - name: csharp\n    out: generated\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
+            printf 'version: v1\nplugins:\n  - remote: buf.build/protocolbuffers/csharp\n    out: generated\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
@@ -532,7 +543,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
-          repository: cuihairu/server
+          repository: cuihairu/croupier
           path: server
           token: ${{ env.SDK_SYNC_TOKEN }}
 
