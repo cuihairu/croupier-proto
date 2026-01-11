@@ -61,7 +61,7 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf pkg/pb
+          rm -rf pkg/pb generated
           mkdir -p pkg/pb
           if [ ! -f "proto/buf.gen.yaml" ]; then
             printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
@@ -532,7 +532,7 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf pkg/pb
+          rm -rf pkg/pb generated
           mkdir -p pkg/pb
           if [ ! -f "proto/buf.gen.yaml" ]; then
             printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
