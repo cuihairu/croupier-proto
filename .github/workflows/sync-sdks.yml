@@ -218,7 +218,7 @@ jobs:
       - name: Install protoc-gen-grpc-java
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          GRPC_JAVA_VERSION="1.68.1"
+          GRPC_JAVA_VERSION="1.68.3"
           GRPC_JAR_URL="https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-all.jar"
           echo "Downloading grpc-java plugin from: ${GRPC_JAR_URL}"
           curl -fSL "${GRPC_JAR_URL}" -o /tmp/protoc-gen-grpc-java.jar
@@ -490,7 +490,7 @@ jobs:
           rm -rf generated
           mkdir -p generated
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v1\nplugins:\n  - remote: buf.build/protocolbuffers/csharp\n    out: generated\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
+            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/csharp\n    out: generated\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
