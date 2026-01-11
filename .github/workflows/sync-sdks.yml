@@ -218,23 +218,11 @@ jobs:
       - name: Install protoc-gen-grpc-java
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
+          # grpc-java 1.60+ uses platform-specific executables instead of -all.jar
           GRPC_JAVA_VERSION="1.68.3"
-          GRPC_JAR_URL="https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-all.jar"
-          echo "Downloading grpc-java plugin from: ${GRPC_JAR_URL}"
-          curl -fSL "${GRPC_JAR_URL}" -o /tmp/protoc-gen-grpc-java.jar
-          # Verify jar file is valid (check for zip magic number and non-zero size)
-          if [ ! -s /tmp/protoc-gen-grpc-java.jar ]; then
-            echo "Error: Downloaded jar file is empty"
-            exit 1
-          fi
-          if ! file /tmp/protoc-gen-grpc-java.jar | grep -q "Zip archive"; then
-            echo "Error: Downloaded file is not a valid jar/zip archive"
-            file /tmp/protoc-gen-grpc-java.jar
-            exit 1
-          fi
-          # Create plugin script
-          echo '#!/bin/sh' > /tmp/protoc-gen-grpc-java
-          echo 'exec java -jar /tmp/protoc-gen-grpc-java.jar "$@"' >> /tmp/protoc-gen-grpc-java
+          GRPC_PLUGIN_URL="https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-linux-x86_64.exe"
+          echo "Downloading grpc-java plugin from: ${GRPC_PLUGIN_URL}"
+          curl -fSL "${GRPC_PLUGIN_URL}" -o /tmp/protoc-gen-grpc-java
           chmod +x /tmp/protoc-gen-grpc-java
           export PATH="/tmp:$PATH"
           protoc-gen-grpc-java --version
