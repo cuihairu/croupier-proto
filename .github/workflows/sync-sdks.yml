@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
 
 # All SDKs use Buf CLI v1.59.0 with remote plugins for unified proto generation:
-# - Go: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0 (local)
+# - Go: buf.build/protocolbuffers/go + buf.build/grpc/go (remote)
 # - Python: buf.build/protocolbuffers/python (remote)
-# - JS: @bufbuild/protoc-gen-es (local via npm)
+# - JS: buf.build/bufbuild/es (remote)
 # - C++: buf.build/protocolbuffers/cpp + buf.build/grpc/cpp (remote)
 # - C#: buf.build/protocolbuffers/csharp (remote)
-# - Java: protoc-gen-grpc-java (local)
-# - Server: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0 (local)
+# - Java: buf.build/grpc/java (remote)
+# - Server: buf.build/protocolbuffers/go + buf.build/grpc/go (remote)
 #
 # Unified output directory: generated/croupier/
 
@@ -54,14 +54,6 @@ jobs:
           github_token: ${{ github.token }}
           version: "1.59.0"
 
-      - name: Install Go protoc plugins (locked versions)
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.0
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-          protoc-gen-go --version
-          protoc-gen-go-grpc --version
-
       - name: Sync proto and generate Go stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-go
@@ -71,6 +63,9 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
+          if [ ! -f "proto/buf.gen.yaml" ]; then
+            printf 'version: v1\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: generated\n  - remote: buf.build/grpc/go\n    out: generated\n' > proto/buf.gen.yaml
+          fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -78,7 +73,7 @@ jobs:
             echo "deps:" >> proto/buf.yaml
             echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
-          buf generate proto
+          buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -535,14 +530,6 @@ jobs:
           github_token: ${{ github.token }}
           version: "1.59.0"
 
-      - name: Install Go protoc plugins (locked versions)
-        if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.0
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
-          protoc-gen-go --version
-          protoc-gen-go-grpc --version
-
       - name: Sync proto and generate Go stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: server
@@ -552,6 +539,9 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
+          if [ ! -f "proto/buf.gen.yaml" ]; then
+            printf 'version: v1\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: generated\n  - remote: buf.build/grpc/go\n    out: generated\n' > proto/buf.gen.yaml
+          fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -559,7 +549,7 @@ jobs:
             echo "deps:" >> proto/buf.yaml
             echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
-          buf generate proto
+          buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
