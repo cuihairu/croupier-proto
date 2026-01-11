@@ -14,7 +14,7 @@ on:
 # - Java: buf.build/grpc/java (remote)
 # - Server: buf.build/protocolbuffers/go + buf.build/grpc/go (remote)
 #
-# Unified output directory: generated/croupier/
+# Unified output directory: Go uses pkg/pb/, others use generated/
 
 jobs:
   go-sdk:
@@ -61,10 +61,10 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf generated
-          mkdir -p generated
+          rm -rf pkg/pb
+          mkdir -p pkg/pb
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: generated\n  - remote: buf.build/grpc/go\n    out: generated\n' > proto/buf.gen.yaml
+            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
@@ -80,7 +80,7 @@ jobs:
         working-directory: sdk-go
         run: |
           echo "Generated Go proto files:"
-          find generated -name "*.pb.go" | head -20
+          find pkg/pb -name "*.pb.go" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -532,10 +532,10 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf generated
-          mkdir -p generated
+          rm -rf pkg/pb
+          mkdir -p pkg/pb
           if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: generated\n  - remote: buf.build/grpc/go\n    out: generated\n' > proto/buf.gen.yaml
+            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
           fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
@@ -551,7 +551,7 @@ jobs:
         working-directory: server
         run: |
           echo "Generated Go proto files:"
-          find generated -name "*.pb.go" | head -20
+          find pkg/pb -name "*.pb.go" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
