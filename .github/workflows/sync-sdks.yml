@@ -11,8 +11,10 @@ on:
 # - JS: @bufbuild/protoc-gen-es (local via npm)
 # - C++: buf.build/protocolbuffers/cpp + buf.build/grpc/cpp (remote)
 # - C#: buf.build/protocolbuffers/csharp (remote)
-# - Java: Gradle protobuf plugin (sync proto files only)
-# DO NOT install system protobuf-compiler (apt) - it's outdated (3.21.x)
+# - Java: protoc-gen-grpc-java (local)
+# - Server: protoc-gen-go@v1.36.0, protoc-gen-go-grpc@v1.3.0 (local)
+#
+# Unified output directory: generated/croupier/
 
 jobs:
   go-sdk:
@@ -67,8 +69,8 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf pkg/pb
-          mkdir -p pkg/pb
+          rm -rf generated
+          mkdir -p generated
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -78,10 +80,12 @@ jobs:
           fi
           buf generate proto
 
-      - name: Cleanup temp downloads
+      - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-go
-        run: rm -rf downloaded_proto
+        run: |
+          echo "Generated Go proto files:"
+          find generated -name "*.pb.go" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -141,8 +145,8 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf croupier/pb
-          mkdir -p croupier/pb
+          rm -rf generated
+          mkdir -p generated
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -151,6 +155,13 @@ jobs:
             echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-python
+        run: |
+          echo "Generated Python proto files:"
+          find generated -name "*.py" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -197,13 +208,65 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Sync proto files to SDK
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+          version: "1.59.0"
+
+      - name: Install protoc-gen-grpc-java
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         run: |
-          rm -rf sdk-java/proto
-          mkdir -p sdk-java/proto
-          cp -r croupier sdk-java/proto/
-          echo "Synced latest proto files to sdk-java/proto/"
+          GRPC_JAVA_VERSION="1.68.1"
+          curl -sSL "https://repo1.maven.org/maven2/io/grpc/protoc-gen-grpc-java/${GRPC_JAVA_VERSION}/protoc-gen-grpc-java-${GRPC_JAVA_VERSION}-all.jar" -o /tmp/protoc-gen-grpc-java.jar
+          chmod +x /tmp/protoc-gen-grpc-java.jar
+          # Create plugin script
+          echo '#!/bin/sh' > /tmp/protoc-gen-grpc-java
+          echo 'java -jar /tmp/protoc-gen-grpc-java.jar "$@"' >> /tmp/protoc-gen-grpc-java
+          chmod +x /tmp/protoc-gen-grpc-java
+          export PATH="/tmp:$PATH"
+          protoc-gen-grpc-java --version
+
+      - name: Sync proto and generate Java stubs
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-java
+        run: |
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
+          rm -rf generated
+          mkdir -p generated
+          if [ ! -f "proto/buf.gen.yaml" ]; then
+            cat > proto/buf.gen.yaml << 'EOF'
+version: v1
+plugins:
+  - name: java
+    out: generated
+    opt:
+      - paths=source_relative
+  - local: protoc-gen-grpc-java
+    out: generated
+    opt:
+      - paths=source_relative
+EOF
+          fi
+          if [ ! -f "proto/buf.yaml" ]; then
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
+          fi
+          export PATH="/tmp:$PATH"
+          buf generate proto --template proto/buf.gen.yaml
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-java
+        run: |
+          echo "Generated Java proto files:"
+          find generated -name "*.java" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -275,8 +338,24 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf src/gen
-          mkdir -p src/gen
+          rm -rf generated
+          mkdir -p generated
+          if [ ! -f "proto/buf.gen.yaml" ]; then
+            cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - local: protoc-gen-es
+    out: generated
+    opt:
+      - target=ts
+      - import_extension=.ts
+  - local: protoc-gen-connect-es
+    out: generated
+    opt:
+      - target=ts
+      - import_extension=.ts
+EOF
+          fi
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -284,7 +363,14 @@ jobs:
             echo "deps:" >> proto/buf.yaml
             echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
-          buf generate proto
+          buf generate proto --template proto/buf.gen.yaml
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-js
+        run: |
+          echo "Generated JavaScript proto files:"
+          find generated -name "*.ts" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -348,6 +434,11 @@ jobs:
             echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
           fi
           buf generate proto
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-cpp
+        run: |
           echo "Generated C++ proto files:"
           find generated -name "*.pb.*" | head -20
 
@@ -409,8 +500,103 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf src/Gen
-          mkdir -p src/Gen
+          rm -rf generated
+          mkdir -p generated
+          if [ ! -f "proto/buf.gen.yaml" ]; then
+            cat > proto/buf.gen.yaml << 'EOF'
+version: v1
+plugins:
+  - name: csharp
+    out: generated
+    opt:
+      - paths=source_relative
+EOF
+          fi
+          if [ ! -f "proto/buf.yaml" ]; then
+            echo "version: v2" > proto/buf.yaml
+            echo "modules:" >> proto/buf.yaml
+            echo "  - path: ." >> proto/buf.yaml
+            echo "deps:" >> proto/buf.yaml
+            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
+          fi
+          buf generate proto --template proto/buf.gen.yaml
+
+      - name: List generated files
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-csharp
+        run: |
+          echo "Generated C# proto files:"
+          find generated -name "*.cs" | head -20
+
+      - name: Commit and push if changed
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: sdk-csharp
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            git config user.name "croupier-bot"
+            git config user.email "bot@croupier.dev"
+            git remote set-url origin https://x-access-token:${{ env.SDK_SYNC_TOKEN }}@github.com/cuihairu/croupier-sdk-csharp.git
+            git add -A
+            git commit -m "chore: sync proto from ${GITHUB_SHA}"
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+
+  server:
+    name: Sync Server
+    runs-on: ubuntu-latest
+    env:
+      SDK_SYNC_TOKEN: ${{ secrets.SDK_SYNC_TOKEN }}
+    steps:
+      - name: Check SDK sync token
+        if: ${{ env.SDK_SYNC_TOKEN == '' }}
+        run: |
+          echo "SDK_SYNC_TOKEN secret is not configured; skipping Server sync."
+          exit 0
+
+      - name: Checkout proto repo
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+
+      - name: Checkout Server
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: cuihairu/server
+          path: server
+          token: ${{ env.SDK_SYNC_TOKEN }}
+
+      - name: Setup Go
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Install Buf CLI
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ github.token }}
+          version: "1.59.0"
+
+      - name: Install Go protoc plugins (locked versions)
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.0
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3.0
+          protoc-gen-go --version
+          protoc-gen-go-grpc --version
+
+      - name: Sync proto and generate Go stubs
+        if: ${{ env.SDK_SYNC_TOKEN != '' }}
+        working-directory: server
+        run: |
+          rm -rf proto
+          mkdir -p proto
+          cp -r ../croupier proto/
+          rm -rf generated
+          mkdir -p generated
           if [ ! -f "proto/buf.yaml" ]; then
             echo "version: v2" > proto/buf.yaml
             echo "modules:" >> proto/buf.yaml
@@ -422,19 +608,18 @@ jobs:
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-csharp
+        working-directory: server
         run: |
-          echo "Generated C# proto files:"
-          find src/Gen -name "*.cs" | head -20
+          echo "Generated Go proto files:"
+          find generated -name "*.pb.go" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
-        working-directory: sdk-csharp
+        working-directory: server
         run: |
           if [[ -n $(git status --porcelain) ]]; then
             git config user.name "croupier-bot"
             git config user.email "bot@croupier.dev"
-            git remote set-url origin https://x-access-token:${{ env.SDK_SYNC_TOKEN }}@github.com/cuihairu/croupier-sdk-csharp.git
             git add -A
             git commit -m "chore: sync proto from ${GITHUB_SHA}"
             git push origin HEAD:main
