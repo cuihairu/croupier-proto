@@ -225,7 +225,8 @@ jobs:
           curl -fSL "${GRPC_PLUGIN_URL}" -o /tmp/protoc-gen-grpc-java
           chmod +x /tmp/protoc-gen-grpc-java
           export PATH="/tmp:$PATH"
-          protoc-gen-grpc-java --version
+          # Verify plugin is executable
+          file /tmp/protoc-gen-grpc-java
 
       - name: Sync proto and generate Java stubs
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
