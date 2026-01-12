@@ -5,16 +5,24 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# All SDKs use Buf CLI v1.59.0 with remote plugins for unified proto generation:
-# - Go: buf.build/protocolbuffers/go + buf.build/grpc/go (remote)
-# - Python: buf.build/protocolbuffers/python (remote)
-# - JS: buf.build/bufbuild/es (remote)
-# - C++: buf.build/protocolbuffers/cpp + buf.build/grpc/cpp (remote)
-# - C#: buf.build/protocolbuffers/csharp (remote)
-# - Java: buf.build/grpc/java (remote)
-# - Server: buf.build/protocolbuffers/go + buf.build/grpc/go (remote)
+# ============================================================================
+# 版本锁定说明（禁止随意修改！）
+# ============================================================================
+# 所有 remote plugins 必须指定固定版本号，详见 CLAUDE.md
 #
-# Unified output directory: Go uses pkg/pb/, others use generated/
+# 锁定版本：
+# - protoc: v29.2
+# - grpc: v1.69.0
+# - protoc-gen-go: v1.36.1
+# - protoc-gen-go-grpc: v1.5.1
+#
+# 对应 SDK runtime 版本：
+# - Java: protobuf-java 4.29.2, grpc-java 1.69.0
+# - Go: google.golang.org/protobuf v1.36.1, grpc v1.69.0
+# - Python: protobuf 5.29.2, grpcio 1.69.0
+# - C++: protobuf 29.2, grpc 1.69.0
+# - C#: Google.Protobuf 3.29.2
+# ============================================================================
 
 jobs:
   go-sdk:
@@ -45,7 +53,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.23'
           cache: false
 
       - name: Install Buf CLI
@@ -63,16 +71,26 @@ jobs:
           cp -r ../croupier proto/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
-          if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
+          # 固定版本: protoc-gen-go v1.36.1, grpc-go v1.5.1
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/go:v1.36.1
+              out: pkg/pb
+              opt:
+                - paths=source_relative
+            - remote: buf.build/grpc/go:v1.5.1
+              out: pkg/pb
+              opt:
+                - paths=source_relative
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
           buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
@@ -139,23 +157,34 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf generated
-          mkdir -p generated
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
-          buf generate proto
+          rm -rf croupier/pb
+          mkdir -p croupier/pb
+          # 固定版本: protoc-python v29.2, grpc-python v1.69.0
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/python:v29.2
+              out: croupier/pb
+            - remote: buf.build/grpc/python:v1.69.0
+              out: croupier/pb
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
+          buf generate proto --template proto/buf.gen.yaml
+          # Create __init__.py files for Python packages
+          find croupier/pb -type d -exec touch {}/__init__.py \;
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-python
         run: |
           echo "Generated Python proto files:"
-          find generated -name "*.py" | head -20
+          find croupier/pb -name "*.py" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -217,16 +246,22 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/java\n    out: generated\n  - remote: buf.build/grpc/java\n    out: generated\n' > proto/buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
+          # 固定版本: protoc-java v29.2, grpc-java v1.69.0
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/java:v29.2
+              out: generated
+            - remote: buf.build/grpc/java:v1.69.0
+              out: generated
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
           buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
@@ -307,16 +342,28 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - local: protoc-gen-es\n    out: generated\n    opt:\n      - target=ts\n      - import_extension=.ts\n  - local: protoc-gen-connect-es\n    out: generated\n    opt:\n      - target=ts\n      - import_extension=.ts\n' > proto/buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
+          # JS/TS 使用本地插件，版本由 package.json 控制
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - local: protoc-gen-es
+              out: generated
+              opt:
+                - target=ts
+                - import_extension=.ts
+            - local: protoc-gen-connect-es
+              out: generated
+              opt:
+                - target=ts
+                - import_extension=.ts
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
           buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
@@ -379,14 +426,23 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
-          buf generate proto
+          # 固定版本: protoc-cpp v29.2, grpc-cpp v1.69.0
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/cpp:v29.2
+              out: generated
+            - remote: buf.build/grpc/cpp:v1.69.0
+              out: generated
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
+          buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -454,16 +510,20 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/csharp\n    out: generated\n' > proto/buf.gen.yaml
-          fi
-          if [ ! -f "proto/buf.yaml" ]; then
-            echo "version: v2" > proto/buf.yaml
-            echo "modules:" >> proto/buf.yaml
-            echo "  - path: ." >> proto/buf.yaml
-            echo "deps:" >> proto/buf.yaml
-            echo "  - buf.build/protocolbuffers/wellknowntypes:v29.3" >> proto/buf.yaml
-          fi
+          # 固定版本: protoc-csharp v29.2
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/csharp:v29.2
+              out: generated
+          EOF
+          cat > proto/buf.yaml << 'EOF'
+          version: v2
+          modules:
+            - path: .
+          deps:
+            - buf.build/protocolbuffers/wellknowntypes:v29.3
+          EOF
           buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files
@@ -516,7 +576,7 @@ jobs:
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.23'
           cache: false
 
       - name: Install Buf CLI
@@ -531,15 +591,24 @@ jobs:
         run: |
           rm -rf proto
           mkdir -p proto
-          # 复制所有 proto 定义（croupier 和 examples）
           cp -r ../croupier proto/
           cp -r ../examples proto/
           cp ../buf.yaml proto/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
-          if [ ! -f "proto/buf.gen.yaml" ]; then
-            printf 'version: v2\nplugins:\n  - remote: buf.build/protocolbuffers/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n  - remote: buf.build/grpc/go\n    out: pkg/pb\n    opt:\n      - paths=source_relative\n' > proto/buf.gen.yaml
-          fi
+          # 固定版本: protoc-gen-go v1.36.1, grpc-go v1.5.1
+          cat > proto/buf.gen.yaml << 'EOF'
+          version: v2
+          plugins:
+            - remote: buf.build/protocolbuffers/go:v1.36.1
+              out: pkg/pb
+              opt:
+                - paths=source_relative
+            - remote: buf.build/grpc/go:v1.5.1
+              out: pkg/pb
+              opt:
+                - paths=source_relative
+          EOF
           buf generate proto --template proto/buf.gen.yaml
 
       - name: List generated files

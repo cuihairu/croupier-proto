@@ -2,70 +2,62 @@
 
 **重要：本文档定义了强制性规范，任何修改必须严格遵守！**
 
-## 核心规范（不可变更）
+---
 
-### 1. Buf 配置版本 - 强制 v2
+## ⚠️ 版本锁定警告 - 必读！
 
-**所有 buf.yaml 和 buf.gen.yaml 必须使用 `version: v2`，禁止使用 v1！**
+**禁止随意修改任何版本号！** 版本不匹配会导致所有 SDK 编译失败。
 
-```yaml
-# 正确 ✅
-version: v2
+如果你（Claude）想要修改版本，**必须先询问用户确认**，并说明：
+1. 为什么要改
+2. 改动会影响哪些 SDK
+3. 需要同步修改哪些文件
 
-# 错误 ❌ - 禁止使用
-version: v1
-```
+**历史教训**：版本问题已经反复出现三个多月，每次随意改版本都会导致 CI 失败。
 
-**原因：**
-- v1 不支持 `remote:` 插件语法
-- v1 的 `managed` 配置语法不同
-- v2 是当前稳定版本，统一使用避免兼容性问题
+---
 
-### 2. Protobuf 依赖版本 - 固定 v29.3 (对应 protobuf 5.29.x)
+## 核心版本锁定表（不可变更）
 
-```yaml
-deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
-```
+### Protobuf 生态版本 - 锁定 v29.2
 
-**禁止升级或降级此版本，除非经过完整的跨 SDK 兼容性测试。**
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| wellknowntypes | v29.3 | buf.yaml deps |
+| protoc (remote plugin) | v29.2 | buf.gen.yaml |
+| grpc (remote plugin) | v1.69.0 | buf.gen.yaml |
 
-### 3. Buf CLI 版本 - 使用最新版本
+### SDK Runtime 依赖版本对应表
 
-GitHub Actions workflow 中使用最新版本即可：
-```yaml
-- uses: bufbuild/buf-setup-action@v1
-  with:
-    github_token: ${{ github.token }}
-```
+| SDK | 依赖包 | 版本 | 配置文件 |
+|-----|--------|------|----------|
+| **Java** | protobuf-java | 4.29.2 | build.gradle |
+| **Java** | grpc-* | 1.69.0 | build.gradle |
+| **Go** | google.golang.org/protobuf | v1.36.1 | go.mod |
+| **Go** | google.golang.org/grpc | v1.69.0 | go.mod |
+| **Python** | protobuf | 5.29.2 | pyproject.toml |
+| **Python** | grpcio | 1.69.0 | pyproject.toml |
+| **C++** | protobuf (vcpkg) | 29.2 | vcpkg.json |
+| **C++** | grpc (vcpkg) | 1.69.0 | vcpkg.json |
+| **C#** | Google.Protobuf | 3.29.2 | *.csproj |
+| **C#** | Grpc.Net.Client | 2.69.0 | *.csproj |
+| **JS/TS** | @bufbuild/protobuf | 2.2.3 | package.json |
+| **JS/TS** | @connectrpc/connect | 2.0.0 | package.json |
 
-## buf.gen.yaml 模板
+---
+
+## buf.gen.yaml 模板（带固定版本）
 
 ### Go SDK / Server
 
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/go
-    out: generated
-  - remote: buf.build/grpc/go
-    out: generated
-```
-
-或本地插件方式：
-```yaml
-version: v2
-managed:
-  enabled: true
-  override:
-    - file_option: go_package_prefix
-      value: github.com/cuihairu/croupier/pkg/pb
-plugins:
-  - local: protoc-gen-go
+  - remote: buf.build/protocolbuffers/go:v1.36.1
     out: pkg/pb
     opt:
       - paths=source_relative
-  - local: protoc-gen-go-grpc
+  - remote: buf.build/grpc/go:v1.5.1
     out: pkg/pb
     opt:
       - paths=source_relative
@@ -76,9 +68,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/java
+  - remote: buf.build/protocolbuffers/java:v29.2
     out: generated
-  - remote: buf.build/grpc/java
+  - remote: buf.build/grpc/java:v1.69.0
     out: generated
 ```
 
@@ -87,7 +79,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/python
+  - remote: buf.build/protocolbuffers/python:v29.2
+    out: croupier/pb
+  - remote: buf.build/grpc/python:v1.69.0
     out: croupier/pb
 ```
 
@@ -96,9 +90,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/cpp
+  - remote: buf.build/protocolbuffers/cpp:v29.2
     out: generated
-  - remote: buf.build/grpc/cpp
+  - remote: buf.build/grpc/cpp:v1.69.0
     out: generated
 ```
 
@@ -107,26 +101,32 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/csharp
-    out: src/Gen
+  - remote: buf.build/protocolbuffers/csharp:v29.2
+    out: generated
+  - remote: buf.build/grpc/csharp:v1.69.0
+    out: generated
 ```
 
 ### JavaScript/TypeScript SDK
+
+JS/TS 使用本地插件（版本由 package.json 控制）：
 
 ```yaml
 version: v2
 plugins:
   - local: protoc-gen-es
-    out: src/gen
+    out: generated
     opt:
       - target=ts
       - import_extension=.ts
   - local: protoc-gen-connect-es
-    out: src/gen
+    out: generated
     opt:
       - target=ts
       - import_extension=.ts
 ```
+
+---
 
 ## buf.yaml 模板
 
@@ -138,22 +138,61 @@ deps:
   - buf.build/protocolbuffers/wellknowntypes:v29.3
 ```
 
+---
+
+## Buf 配置版本 - 强制 v2
+
+**所有 buf.yaml 和 buf.gen.yaml 必须使用 `version: v2`，禁止使用 v1！**
+
+```yaml
+# 正确 ✅
+version: v2
+
+# 错误 ❌ - 禁止使用
+version: v1
+```
+
+---
+
 ## 禁止事项
 
-1. **禁止在任何 buf 配置文件中使用 `version: v1`**
-2. **禁止在 v1 格式中使用 `remote:` 语法**（v1 只支持 `name:` 和 `plugin:`）
-3. **禁止混用 v1 和 v2 语法**
-4. **禁止修改 wellknowntypes 版本**（锁定 v29.3）
-5. ~~Buf CLI 版本不锁定，使用最新版即可~~
+1. **禁止修改 remote plugin 版本**（除非用户明确要求升级）
+2. **禁止修改 SDK runtime 依赖版本**（必须与 remote plugin 版本匹配）
+3. **禁止使用不带版本号的 remote plugin**（如 `buf.build/protocolbuffers/java` 不带 `:v29.2`）
+4. **禁止在任何 buf 配置文件中使用 `version: v1`**
+5. **禁止混用 v1 和 v2 语法**
 
-## Workflow 文件检查清单
+---
+
+## 版本升级流程（仅当用户要求时）
+
+如果需要升级版本，必须按以下步骤执行：
+
+1. **确认新版本号**
+   - 查看 buf.build registry 获取最新 remote plugin 版本
+   - 查看各语言的 runtime 版本对应关系
+
+2. **同步修改以下文件**
+   - `croupier-proto/CLAUDE.md` - 更新版本对应表
+   - `croupier-proto/.github/workflows/sync-sdks.yml` - 更新 remote plugin 版本
+   - 各 SDK 的依赖配置文件
+
+3. **测试验证**
+   - 手动触发 sync-sdks workflow
+   - 确认所有 SDK CI 通过
+
+---
+
+## Workflow 检查清单
 
 修改 `.github/workflows/sync-sdks.yml` 前，检查：
 
-- [ ] 所有生成的 buf.gen.yaml 使用 `version: v2`
-- [ ] 使用 `remote:` 语法时必须是 v2 格式
+- [ ] 所有 remote plugin 都带版本号（如 `:v29.2`）
+- [ ] 版本号与本文档的版本对应表一致
 - [ ] buf.yaml 的 deps 使用 `v29.3`
-- [ ] bufbuild/buf-setup-action 使用最新版本（不指定 version）
+- [ ] 所有 buf.gen.yaml 使用 `version: v2`
+
+---
 
 ## 快速验证命令
 
@@ -167,5 +206,6 @@ buf generate --debug
 
 ---
 
-**最后更新：2026-01-11**
+**最后更新：2026-01-12**
 **此文档为强制性规范，违反将导致 CI 失败**
+**版本锁定：protoc v29.2 / grpc v1.69.0**
