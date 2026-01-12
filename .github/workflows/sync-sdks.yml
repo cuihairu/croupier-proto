@@ -157,16 +157,17 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf croupier/pb
-          mkdir -p croupier/pb
+          rm -rf generated
+          mkdir -p generated
           # 固定版本: protoc-python v29.2, grpc-python v1.69.0
+          # 输出到 generated 目录以匹配 SDK 代码的 import 路径
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
             - remote: buf.build/protocolbuffers/python:v29.2
-              out: croupier/pb
+              out: generated
             - remote: buf.build/grpc/python:v1.69.0
-              out: croupier/pb
+              out: generated
           EOF
           cat > proto/buf.yaml << 'EOF'
           version: v2
@@ -177,14 +178,14 @@ jobs:
           EOF
           buf generate proto --template proto/buf.gen.yaml
           # Create __init__.py files for Python packages
-          find croupier/pb -type d -exec touch {}/__init__.py \;
+          find generated -type d -exec touch {}/__init__.py \;
 
       - name: List generated files
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
         working-directory: sdk-python
         run: |
           echo "Generated Python proto files:"
-          find croupier/pb -name "*.py" | head -20
+          find generated -name "*.py" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}
@@ -340,19 +341,20 @@ jobs:
           rm -rf proto
           mkdir -p proto
           cp -r ../croupier proto/
-          rm -rf generated
-          mkdir -p generated
+          rm -rf src/gen
+          mkdir -p src/gen
           # JS/TS 使用本地插件，版本由 package.json 控制
+          # 输出到 src/gen 目录以匹配 SDK 代码的 import 路径
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
             - local: protoc-gen-es
-              out: generated
+              out: src/gen
               opt:
                 - target=ts
                 - import_extension=.ts
             - local: protoc-gen-connect-es
-              out: generated
+              out: src/gen
               opt:
                 - target=ts
                 - import_extension=.ts
@@ -371,7 +373,7 @@ jobs:
         working-directory: sdk-js
         run: |
           echo "Generated JavaScript proto files:"
-          find generated -name "*.ts" | head -20
+          find src/gen -name "*.ts" | head -20
 
       - name: Commit and push if changed
         if: ${{ env.SDK_SYNC_TOKEN != '' }}

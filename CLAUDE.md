@@ -37,8 +37,9 @@
 | **Go** | google.golang.org/grpc | v1.69.0 | go.mod |
 | **Python** | protobuf | 5.29.2 | pyproject.toml |
 | **Python** | grpcio | 1.69.0 | pyproject.toml |
-| **C++** | protobuf (vcpkg) | 29.2 | vcpkg.json |
+| **C++** | protobuf (vcpkg) | 5.29.2 | vcpkg.json |
 | **C++** | grpc (vcpkg) | 1.69.0 | vcpkg.json |
+| **C++** | abseil (vcpkg) | 20240722.0 | vcpkg.json |
 | **C#** | Google.Protobuf | 3.29.2 | *.csproj |
 | **C#** | Grpc.Net.Client | 2.69.0 | *.csproj |
 | **JS/TS** | @bufbuild/protobuf | 2.2.3 | package.json |
@@ -80,9 +81,9 @@ plugins:
 version: v2
 plugins:
   - remote: buf.build/protocolbuffers/python:v29.2
-    out: croupier/pb
+    out: generated
   - remote: buf.build/grpc/python:v1.69.0
-    out: croupier/pb
+    out: generated
 ```
 
 ### C++ SDK
@@ -115,12 +116,12 @@ JS/TS 使用本地插件（版本由 package.json 控制）：
 version: v2
 plugins:
   - local: protoc-gen-es
-    out: generated
+    out: src/gen
     opt:
       - target=ts
       - import_extension=.ts
   - local: protoc-gen-connect-es
-    out: generated
+    out: src/gen
     opt:
       - target=ts
       - import_extension=.ts
