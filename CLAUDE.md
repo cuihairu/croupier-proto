@@ -19,28 +19,28 @@
 
 ## 核心版本锁定表（不可变更）
 
-### Protobuf 生态版本 - 锁定 v29.2
+### Protobuf 生态版本 - 锁定 v29.5
 
 | 组件 | 版本 | 说明 |
 |------|------|------|
-| wellknowntypes | v29.3 | buf.yaml deps |
-| protoc (remote plugin) | v29.2 | buf.gen.yaml |
+| wellknowntypes | v29.5 | buf.yaml deps |
+| protoc (remote plugin) | v29.5 | buf.gen.yaml |
 | grpc (remote plugin) | v1.69.0 | buf.gen.yaml |
 
 ### SDK Runtime 依赖版本对应表
 
 | SDK | 依赖包 | 版本 | 配置文件 |
 |-----|--------|------|----------|
-| **Java** | protobuf-java | 4.29.2 | build.gradle |
+| **Java** | protobuf-java | 4.29.5 | build.gradle |
 | **Java** | grpc-* | 1.69.0 | build.gradle |
-| **Go** | google.golang.org/protobuf | v1.36.1 | go.mod |
+| **Go** | google.golang.org/protobuf | v1.36.11 | go.mod |
 | **Go** | google.golang.org/grpc | v1.69.0 | go.mod |
-| **Python** | protobuf | 5.29.2 | pyproject.toml |
+| **Python** | protobuf | 5.29.5 | pyproject.toml |
 | **Python** | grpcio | 1.69.0 | pyproject.toml |
-| **C++** | protobuf (vcpkg) | 5.29.2 | vcpkg.json |
+| **C++** | protobuf (vcpkg) | 5.29.5 | vcpkg.json |
 | **C++** | grpc (vcpkg) | 1.69.0 | vcpkg.json |
 | **C++** | abseil (vcpkg) | 20240722.0 | vcpkg.json |
-| **C#** | Google.Protobuf | 3.29.2 | *.csproj |
+| **C#** | Google.Protobuf | 3.29.5 | *.csproj |
 | **C#** | Grpc.Net.Client | 2.69.0 | *.csproj |
 | **JS/TS** | @bufbuild/protobuf | 2.2.3 | package.json |
 | **JS/TS** | @connectrpc/connect | 2.0.0 | package.json |
@@ -54,7 +54,7 @@
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/go:v1.36.1
+  - remote: buf.build/protocolbuffers/go:v1.36.11
     out: pkg/pb
     opt:
       - paths=source_relative
@@ -69,7 +69,7 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/java:v29.2
+  - remote: buf.build/protocolbuffers/java:v29.5
     out: generated
   - remote: buf.build/grpc/java:v1.69.0
     out: generated
@@ -80,7 +80,7 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/python:v29.2
+  - remote: buf.build/protocolbuffers/python:v29.5
     out: generated
   - remote: buf.build/grpc/python:v1.69.0
     out: generated
@@ -91,7 +91,7 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/cpp:v29.2
+  - remote: buf.build/protocolbuffers/cpp:v29.5
     out: generated
   - remote: buf.build/grpc/cpp:v1.69.0
     out: generated
@@ -102,7 +102,7 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/csharp:v29.2
+  - remote: buf.build/protocolbuffers/csharp:v29.5
     out: generated
   - remote: buf.build/grpc/csharp:v1.69.0
     out: generated
@@ -110,7 +110,7 @@ plugins:
 
 ### JavaScript/TypeScript SDK
 
-JS/TS 使用本地插件（版本由 package.json 控制）：
+JS/TS 使用 Connect-ES 2.0 架构，只需要 protoc-gen-es（版本由 package.json 控制）：
 
 ```yaml
 version: v2
@@ -119,13 +119,9 @@ plugins:
     out: src/gen
     opt:
       - target=ts
-      - import_extension=.ts
-  - local: protoc-gen-connect-es
-    out: src/gen
-    opt:
-      - target=ts
-      - import_extension=.ts
 ```
+
+**注意**：Connect-ES 2.0 不再需要 protoc-gen-connect-es，service 定义由 protoc-gen-es 直接生成。
 
 ---
 
@@ -136,7 +132,7 @@ version: v2
 modules:
   - path: .
 deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
+  - buf.build/protocolbuffers/wellknowntypes:v29.5
 ```
 
 ---
@@ -159,7 +155,7 @@ version: v1
 
 1. **禁止修改 remote plugin 版本**（除非用户明确要求升级）
 2. **禁止修改 SDK runtime 依赖版本**（必须与 remote plugin 版本匹配）
-3. **禁止使用不带版本号的 remote plugin**（如 `buf.build/protocolbuffers/java` 不带 `:v29.2`）
+3. **禁止使用不带版本号的 remote plugin**（如 `buf.build/protocolbuffers/java` 不带 `:v29.5`）
 4. **禁止在任何 buf 配置文件中使用 `version: v1`**
 5. **禁止混用 v1 和 v2 语法**
 
@@ -188,9 +184,9 @@ version: v1
 
 修改 `.github/workflows/sync-sdks.yml` 前，检查：
 
-- [ ] 所有 remote plugin 都带版本号（如 `:v29.2`）
+- [ ] 所有 remote plugin 都带版本号（如 `:v29.5`）
 - [ ] 版本号与本文档的版本对应表一致
-- [ ] buf.yaml 的 deps 使用 `v29.3`
+- [ ] buf.yaml 的 deps 使用 `v29.5`
 - [ ] 所有 buf.gen.yaml 使用 `version: v2`
 
 ---
@@ -207,6 +203,6 @@ buf generate --debug
 
 ---
 
-**最后更新：2026-01-12**
+**最后更新：2026-01-13**
 **此文档为强制性规范，违反将导致 CI 失败**
-**版本锁定：protoc v29.2 / grpc v1.69.0**
+**版本锁定：protoc v29.5 / grpc v1.69.0**

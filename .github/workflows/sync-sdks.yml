@@ -11,17 +11,17 @@ on:
 # 所有 remote plugins 必须指定固定版本号，详见 CLAUDE.md
 #
 # 锁定版本：
-# - protoc: v29.2
+# - protoc: v29.5
 # - grpc: v1.69.0
-# - protoc-gen-go: v1.36.1
+# - protoc-gen-go: v1.36.11
 # - protoc-gen-go-grpc: v1.5.1
 #
 # 对应 SDK runtime 版本：
-# - Java: protobuf-java 4.29.2, grpc-java 1.69.0
-# - Go: google.golang.org/protobuf v1.36.1, grpc v1.69.0
-# - Python: protobuf 5.29.2, grpcio 1.69.0
-# - C++: protobuf 29.2, grpc 1.69.0
-# - C#: Google.Protobuf 3.29.2
+# - Java: protobuf-java 4.29.5, grpc-java 1.69.0
+# - Go: google.golang.org/protobuf v1.36.11, grpc v1.69.0
+# - Python: protobuf 5.29.5, grpcio 1.69.0
+# - C++: protobuf 5.29.5, grpc 1.69.0
+# - C#: Google.Protobuf 3.29.5
 # ============================================================================
 
 jobs:
@@ -71,11 +71,11 @@ jobs:
           cp -r ../croupier proto/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
-          # 固定版本: protoc-gen-go v1.36.1, grpc-go v1.5.1
+          # 固定版本: protoc-gen-go v1.36.11, grpc-go v1.5.1
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/go:v1.36.1
+            - remote: buf.build/protocolbuffers/go:v1.36.11
               out: pkg/pb
               opt:
                 - paths=source_relative
@@ -89,7 +89,7 @@ jobs:
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
 
@@ -159,12 +159,12 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          # 固定版本: protoc-python v29.2, grpc-python v1.69.0
+          # 固定版本: protoc-python v29.5, grpc-python v1.69.0
           # 输出到 generated 目录以匹配 SDK 代码的 import 路径
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/python:v29.2
+            - remote: buf.build/protocolbuffers/python:v29.5
               out: generated
             - remote: buf.build/grpc/python:v1.69.0
               out: generated
@@ -174,7 +174,7 @@ jobs:
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
           # Create __init__.py files for Python packages
@@ -247,11 +247,11 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          # 固定版本: protoc-java v29.2, grpc-java v1.69.0
+          # 固定版本: protoc-java v29.5, grpc-java v1.69.0
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/java:v29.2
+            - remote: buf.build/protocolbuffers/java:v29.5
               out: generated
             - remote: buf.build/grpc/java:v1.69.0
               out: generated
@@ -261,7 +261,7 @@ jobs:
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
 
@@ -343,7 +343,7 @@ jobs:
           cp -r ../croupier proto/
           rm -rf src/gen
           mkdir -p src/gen
-          # JS/TS 使用本地插件，版本由 package.json 控制
+          # JS/TS 使用 Connect-ES 2.0 架构，只需要 protoc-gen-es
           # 输出到 src/gen 目录以匹配 SDK 代码的 import 路径
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
@@ -352,19 +352,13 @@ jobs:
               out: src/gen
               opt:
                 - target=ts
-                - import_extension=.ts
-            - local: protoc-gen-connect-es
-              out: src/gen
-              opt:
-                - target=ts
-                - import_extension=.ts
           EOF
           cat > proto/buf.yaml << 'EOF'
           version: v2
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
 
@@ -428,11 +422,11 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          # 固定版本: protoc-cpp v29.2, grpc-cpp v1.69.0
+          # 固定版本: protoc-cpp v29.5, grpc-cpp v1.69.0
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/cpp:v29.2
+            - remote: buf.build/protocolbuffers/cpp:v29.5
               out: generated
             - remote: buf.build/grpc/cpp:v1.69.0
               out: generated
@@ -442,7 +436,7 @@ jobs:
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
 
@@ -512,11 +506,11 @@ jobs:
           cp -r ../croupier proto/
           rm -rf generated
           mkdir -p generated
-          # 固定版本: protoc-csharp v29.2
+          # 固定版本: protoc-csharp v29.5
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/csharp:v29.2
+            - remote: buf.build/protocolbuffers/csharp:v29.5
               out: generated
           EOF
           cat > proto/buf.yaml << 'EOF'
@@ -524,7 +518,7 @@ jobs:
           modules:
             - path: .
           deps:
-            - buf.build/protocolbuffers/wellknowntypes:v29.3
+            - buf.build/protocolbuffers/wellknowntypes:v29.5
           EOF
           buf generate proto --template proto/buf.gen.yaml
 
@@ -598,11 +592,11 @@ jobs:
           cp ../buf.yaml proto/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
-          # 固定版本: protoc-gen-go v1.36.1, grpc-go v1.5.1
+          # 固定版本: protoc-gen-go v1.36.11, grpc-go v1.5.1
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/go:v1.36.1
+            - remote: buf.build/protocolbuffers/go:v1.36.11
               out: pkg/pb
               opt:
                 - paths=source_relative
