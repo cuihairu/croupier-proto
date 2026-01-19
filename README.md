@@ -47,17 +47,17 @@ Croupier Proto 是 [Croupier](https://github.com/cuihairu/croupier) 游戏后端
 
 | 项目 | 描述 | 链接 |
 |------|------|------|
-| **Croupier** | 游戏后端平台主项目 | [cuihairu/croupier](https://github.com/cuihairu/croupier) |
+| **Croupier** | 游戏后端平台主项目 | [croupier](https://github.com/cuihairu/croupier) |
 
 ## SDK 仓库
 
 | 语言 | 仓库 | 状态 |
 |------|------|------|
-| **C++** | [cuihairu/croupier-sdk-cpp](https://github.com/cuihairu/croupier-sdk-cpp) | [![C++ Build](https://github.com/cuihairu/croupier-sdk-cpp/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-cpp/actions/workflows/nightly.yml) |
-| **Go** | [cuihairu/croupier-sdk-go](https://github.com/cuihairu/croupier-sdk-go) | [![Go Build](https://github.com/cuihairu/croupier-sdk-go/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-go/actions/workflows/nightly.yml) |
-| **Java** | [cuihairu/croupier-sdk-java](https://github.com/cuihairu/croupier-sdk-java) | [![Java Build](https://github.com/cuihairu/croupier-sdk-java/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-java/actions/workflows/nightly.yml) |
+| **C++** | [croupier-sdk-cpp](https://github.com/cuihairu/croupier-sdk-cpp) | [![C++ Build](https://github.com/cuihairu/croupier-sdk-cpp/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-cpp/actions/workflows/nightly.yml) |
+| **Go** | [croupier-sdk-go](https://github.com/cuihairu/croupier-sdk-go) | [![Go Build](https://github.com/cuihairu/croupier-sdk-go/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-go/actions/workflows/nightly.yml) |
+| **Java** | [croupier-sdk-java](https://github.com/cuihairu/croupier-sdk-java) | [![Java Build](https://github.com/cuihairu/croupier-sdk-java/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-java/actions/workflows/nightly.yml) |
 | **JavaScript/TypeScript** | [cuihairu/croupier-sdk-js](https://github.com/cuihairu/croupier-sdk-js) | [![JS Build](https://github.com/cuihairu/croupier-sdk-js/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-js/actions/workflows/nightly.yml) |
-| **Python** | [cuihairu/croupier-sdk-python](https://github.com/cuihairu/croupier-sdk-python) | [![Python Build](https://github.com/cuihairu/croupier-sdk-python/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-python/actions/workflows/nightly.yml) |
+| **Python** | [croupier-sdk-python](https://github.com/cuihairu/croupier-sdk-python) | [![Python Build](https://github.com/cuihairu/croupier-sdk-python/actions/workflows/nightly.yml/badge.svg)](https://github.com/cuihairu/croupier-sdk-python/actions/workflows/nightly.yml) |
 
 ## 目录结构
 
@@ -72,8 +72,8 @@ Croupier Proto 是 [Croupier](https://github.com/cuihairu/croupier) 游戏后端
 
 ### 系统要求
 
-- [Buf CLI](https://buf.build/docs/installation) ≥ 1.30
-- `protoc` ≥ 3.21（仅在本地需要直接调用 `protoc` 时）
+- [Buf CLI](https://buf.build/docs/installation) ≥ 1.60
+- `protoc` ≥ 3.29（仅在本地需要直接调用 `protoc` 时）
 
 ### 校验
 
