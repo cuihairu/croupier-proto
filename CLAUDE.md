@@ -19,29 +19,29 @@
 
 ## 核心版本锁定表（不可变更）
 
-### Protobuf 生态版本 - 锁定 v29.5
+### Protobuf 生态版本 - 锁定 v25.1
 
 | 组件 | 版本 | 说明 |
 |------|------|------|
-| wellknowntypes | v29.5 | buf.yaml deps |
-| protoc (remote plugin) | v29.5 | buf.gen.yaml |
-| grpc (remote plugin) | v1.69.0 | buf.gen.yaml |
+| wellknowntypes | v25.1 | buf.yaml deps |
+| protoc (remote plugin) | v25.1 | buf.gen.yaml |
+| grpc (remote plugin) | v1.71.0 | buf.gen.yaml |
 
 ### SDK Runtime 依赖版本对应表
 
 | SDK | 依赖包 | 版本 | 配置文件 |
 |-----|--------|------|----------|
-| **Java** | protobuf-java | 4.29.5 | build.gradle |
-| **Java** | grpc-* | 1.69.0 | build.gradle |
+| **Java** | protobuf-java | 4.25.1 | build.gradle |
+| **Java** | grpc-* | 1.71.0 | build.gradle |
 | **Go** | google.golang.org/protobuf | v1.36.11 | go.mod |
-| **Go** | google.golang.org/grpc | v1.69.0 | go.mod |
-| **Python** | protobuf | 5.29.5 | pyproject.toml |
-| **Python** | grpcio | 1.69.0 | pyproject.toml |
-| **C++** | protobuf (vcpkg) | 5.29.5 | vcpkg.json |
-| **C++** | grpc (vcpkg) | 1.69.0 | vcpkg.json |
+| **Go** | google.golang.org/grpc | v1.71.0 | go.mod |
+| **Python** | protobuf | 4.25.1 | pyproject.toml |
+| **Python** | grpcio | 1.71.0 | pyproject.toml |
+| **C++** | protobuf (vcpkg) | 4.25.1 | vcpkg.json |
+| **C++** | grpc (vcpkg) | 1.71.0 | vcpkg.json |
 | **C++** | abseil (vcpkg) | 20240722.0 | vcpkg.json |
-| **C#** | Google.Protobuf | 3.29.5 | *.csproj |
-| **C#** | Grpc.Net.Client | 2.69.0 | *.csproj |
+| **C#** | Google.Protobuf | 3.25.1 | *.csproj |
+| **C#** | Grpc.Net.Client | 2.71.0 | *.csproj |
 | **JS/TS** | @bufbuild/protobuf | 2.2.3 | package.json |
 | **JS/TS** | @connectrpc/connect | 2.0.0 | package.json |
 
@@ -69,9 +69,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/java:v29.5
+  - remote: buf.build/protocolbuffers/java:v25.1
     out: generated
-  - remote: buf.build/grpc/java:v1.69.0
+  - remote: buf.build/grpc/java:v1.71.0
     out: generated
 ```
 
@@ -80,9 +80,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/python:v29.5
+  - remote: buf.build/protocolbuffers/python:v25.1
     out: generated
-  - remote: buf.build/grpc/python:v1.69.0
+  - remote: buf.build/grpc/python:v1.71.0
     out: generated
 ```
 
@@ -91,9 +91,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/cpp:v29.5
+  - remote: buf.build/protocolbuffers/cpp:v25.1
     out: generated
-  - remote: buf.build/grpc/cpp:v1.69.0
+  - remote: buf.build/grpc/cpp:v1.71.0
     out: generated
 ```
 
@@ -102,9 +102,9 @@ plugins:
 ```yaml
 version: v2
 plugins:
-  - remote: buf.build/protocolbuffers/csharp:v29.5
+  - remote: buf.build/protocolbuffers/csharp:v25.1
     out: generated
-  - remote: buf.build/grpc/csharp:v1.69.0
+  - remote: buf.build/grpc/csharp:v1.71.0
     out: generated
 ```
 
@@ -132,7 +132,7 @@ version: v2
 modules:
   - path: .
 deps:
-  - buf.build/protocolbuffers/wellknowntypes:v29.5
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
 ```
 
 ---
@@ -184,9 +184,9 @@ version: v1
 
 修改 `.github/workflows/sync-sdks.yml` 前，检查：
 
-- [ ] 所有 remote plugin 都带版本号（如 `:v29.5`）
+- [ ] 所有 remote plugin 都带版本号（如 `:v25.1`）
 - [ ] 版本号与本文档的版本对应表一致
-- [ ] buf.yaml 的 deps 使用 `v29.5`
+- [ ] buf.yaml 的 deps 使用 `v25.1`
 - [ ] 所有 buf.gen.yaml 使用 `version: v2`
 
 ---
@@ -203,6 +203,6 @@ buf generate --debug
 
 ---
 
-**最后更新：2026-01-13**
+**最后更新：2026-01-31**
 **此文档为强制性规范，违反将导致 CI 失败**
-**版本锁定：protoc v29.5 / grpc v1.69.0**
+**版本锁定：protoc v25.1 / grpc v1.71.0**
