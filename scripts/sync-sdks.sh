@@ -1,0 +1,507 @@
+#!/bin/bash
+# 本地 SDK 同步脚本 - 用于手动生成并同步 proto 文件到各个 SDK 仓库
+# 用法: ./scripts/sync-sdks.sh [sdk1,sdk2,...]
+# 示例: ./scripts/sync-sdks.sh go,python,cpp
+#      ./scripts/sync-sdks.sh              # 同步所有 SDK
+#      ./scripts/sync-sdks.sh server       # 同步 server
+
+set -e
+
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# 获取脚本所在目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# 默认 SDK 列表
+ALL_SDKS=(
+    "croupier-sdk-go:go:Go"
+    "croupier-sdk-python:python:Python"
+    "croupier-sdk-java:java:Java"
+    "croupier-sdk-js:js:JavaScript"
+    "croupier-sdk-cpp:cpp:C++"
+    "croupier-sdk-csharp:csharp:C#"
+    "croupier:server:Server"
+)
+
+# 函数：打印使用说明
+usage() {
+    echo "用法: $0 [选项] [SDK列表]"
+    echo ""
+    echo "选项:"
+    echo "  -h, --help              显示此帮助信息"
+    echo "  -p, --path BASE_PATH    指定 SDK 仓库的基础路径 (默认: ../)"
+    echo "  -d, --dry-run           预演模式，不执行实际操作"
+    echo ""
+    echo "SDK列表 (逗号分隔):"
+    echo "  go, python, java, js, cpp, csharp, server, all"
+    echo ""
+    echo "示例:"
+    echo "  $0                      # 同步所有 SDK"
+    echo "  $0 go,python            # 只同步 Go 和 Python SDK"
+    echo "  $0 -p ~/Workspaces go   # 指定 SDK 基础路径"
+    echo "  $0 -d cpp               # 预演 C++ SDK 同步"
+    exit 0
+}
+
+# 函数：打印消息
+log_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}[WARN]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# 函数：检查命令是否存在
+check_command() {
+    if ! command -v "$1" &> /dev/null; then
+        log_error "命令 $1 未找到，请先安装"
+        return 1
+    fi
+}
+
+# 解析参数
+BASE_PATH="../"
+DRY_RUN=false
+REQUESTED_SDKS=()
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            usage
+            ;;
+        -p|--path)
+            BASE_PATH="$2"
+            shift 2
+            ;;
+        -d|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        go|python|java|js|cpp|csharp|server|all)
+            IFS=',' read -ra SDK_ARRAY <<< "$1"
+            for sdk in "${SDK_ARRAY[@]}"; do
+                REQUESTED_SDKS+=("$sdk")
+            done
+            shift
+            ;;
+        *)
+            if [[ $1 == *,* ]]; then
+                IFS=',' read -ra SDK_ARRAY <<< "$1"
+                for sdk in "${SDK_ARRAY[@]}"; do
+                    REQUESTED_SDKS+=("$sdk")
+                done
+            else
+                REQUESTED_SDKS+=("$1")
+            fi
+            shift
+            ;;
+    esac
+done
+
+# 如果没有指定 SDK，默认同步所有
+if [ ${#REQUESTED_SDKS[@]} -eq 0 ]; then
+    REQUESTED_SDKS=("all")
+fi
+
+# 检查必要的工具
+check_command buf
+check_command git
+
+log_info "=== Croupier SDK 本地同步脚本 ==="
+log_info "基础路径: $BASE_PATH"
+log_info "预演模式: $DRY_RUN"
+echo ""
+
+# 函数：同步 Go SDK
+sync_go_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 Go SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf pkg/pb generated
+    mkdir -p pkg/pb
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.11
+    out: pkg/pb
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go:v1.5.1
+    out: pkg/pb
+    opt:
+      - paths=source_relative
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 Go 文件:"
+    find pkg/pb -name "*.pb.go" | wc -l
+}
+
+# 函数：同步 Python SDK
+sync_python_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 Python SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf generated
+    mkdir -p generated
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/python:v25.1
+    out: generated
+  - remote: buf.build/grpc/python:v1.71.0
+    out: generated
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+    find generated -type d -exec touch {}/__init__.py \;
+
+    log_info "生成的 Python 文件:"
+    find generated -name "*.py" | wc -l
+}
+
+# 函数：同步 Java SDK
+sync_java_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 Java SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf generated
+    mkdir -p generated
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/java:v25.1
+    out: generated
+  - remote: buf.build/grpc/java:v1.71.0
+    out: generated
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 Java 文件:"
+    find generated -name "*.java" | wc -l
+}
+
+# 函数：同步 JavaScript SDK
+sync_js_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 JavaScript SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    export PATH="$PWD/node_modules/.bin:$PATH"
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf src/gen
+    mkdir -p src/gen
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - local: protoc-gen-es
+    out: src/gen
+    opt:
+      - target=ts
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 TypeScript 文件:"
+    find src/gen -name "*.ts" | wc -l
+}
+
+# 函数：同步 C++ SDK
+sync_cpp_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 C++ SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf generated
+    mkdir -p generated
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/cpp:v25.1
+    out: generated
+  - remote: buf.build/grpc/cpp:v1.71.0
+    out: generated
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 C++ 文件:"
+    find generated -name "*.pb.*" | wc -l
+}
+
+# 函数：同步 C# SDK
+sync_csharp_sdk() {
+    local sdk_path="$1"
+    log_info "开始同步 C# SDK..."
+
+    cd "$sdk_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto/croupier
+    cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    rm -rf generated
+    mkdir -p generated
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/csharp:v25.1
+    out: generated
+  - remote: buf.build/grpc/csharp:v1.71.0
+    out: generated
+EOF
+
+    cat > proto/buf.yaml << 'EOF'
+version: v2
+modules:
+  - path: .
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 C# 文件:"
+    find generated -name "*.cs" | wc -l
+}
+
+# 函数：同步 Server
+sync_server() {
+    local server_path="$1"
+    log_info "开始同步 Server..."
+
+    cd "$server_path"
+
+    if [ "$DRY_RUN" = true ]; then
+        log_warn "[预演] 将删除 proto/ 并重新生成"
+        return
+    fi
+
+    rm -rf proto
+    mkdir -p proto
+    cp -r "$REPO_ROOT/croupier" proto/
+    cp -r "$REPO_ROOT/examples" proto/
+    cp "$REPO_ROOT/buf.yaml" proto/
+    rm -rf pkg/pb generated
+    mkdir -p pkg/pb
+
+    cat > proto/buf.gen.yaml << 'EOF'
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.11
+    out: pkg/pb
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go:v1.5.1
+    out: pkg/pb
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+EOF
+
+    buf generate proto --template proto/buf.gen.yaml
+
+    log_info "生成的 Go 文件:"
+    find pkg/pb -name "*.pb.go" | wc -l
+}
+
+# 主处理逻辑
+declare -A SDK_MAP
+for sdk_info in "${ALL_SDKS[@]}"; do
+    IFS=':' read -ra PARTS <<< "$sdk_info"
+    repo_name="${PARTS[0]}"
+    sdk_id="${PARTS[1]}"
+    sdk_display="${PARTS[2]}"
+    SDK_MAP["$sdk_id"]="$repo_name|$sdk_display"
+done
+
+# 处理每个请求的 SDK
+for requested in "${REQUESTED_SDKS[@]}"; do
+    if [ "$requested" = "all" ]; then
+        for sdk_id in "${!SDK_MAP[@]}"; do
+            IFS='|' read -ra INFO <<< "${SDK_MAP[$sdk_id]}"
+            repo_name="${INFO[0]}"
+            sdk_display="${INFO[1]}"
+
+            sdk_full_path="${BASE_PATH}${repo_name}"
+
+            if [ ! -d "$sdk_full_path" ]; then
+                log_warn "跳过 $sdk_display: 路径不存在 ($sdk_full_path)"
+                continue
+            fi
+
+            echo ""
+            log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            log_info "处理 $sdk_display SDK"
+            log_info "路径: $sdk_full_path"
+            echo ""
+
+            case "$sdk_id" in
+                go) sync_go_sdk "$sdk_full_path" ;;
+                python) sync_python_sdk "$sdk_full_path" ;;
+                java) sync_java_sdk "$sdk_full_path" ;;
+                js) sync_js_sdk "$sdk_full_path" ;;
+                cpp) sync_cpp_sdk "$sdk_full_path" ;;
+                csharp) sync_csharp_sdk "$sdk_full_path" ;;
+                server) sync_server "$sdk_full_path" ;;
+            esac
+
+            if [ "$DRY_RUN" = false ]; then
+                log_info "✓ $sdk_display SDK 同步完成"
+            fi
+        done
+    else
+        if [ -n "${SDK_MAP[$requested]}" ]; then
+            IFS='|' read -ra INFO <<< "${SDK_MAP[$requested]}"
+            repo_name="${INFO[0]}"
+            sdk_display="${INFO[1]}"
+
+            sdk_full_path="${BASE_PATH}${repo_name}"
+
+            if [ ! -d "$sdk_full_path" ]; then
+                log_error "跳过 $sdk_display: 路径不存在 ($sdk_full_path)"
+                continue
+            fi
+
+            echo ""
+            log_info "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            log_info "处理 $sdk_display SDK"
+            log_info "路径: $sdk_full_path"
+            echo ""
+
+            case "$requested" in
+                go) sync_go_sdk "$sdk_full_path" ;;
+                python) sync_python_sdk "$sdk_full_path" ;;
+                java) sync_java_sdk "$sdk_full_path" ;;
+                js) sync_js_sdk "$sdk_full_path" ;;
+                cpp) sync_cpp_sdk "$sdk_full_path" ;;
+                csharp) sync_csharp_sdk "$sdk_full_path" ;;
+                server) sync_server "$sdk_full_path" ;;
+            esac
+
+            if [ "$DRY_RUN" = false ]; then
+                log_info "✓ $sdk_display SDK 同步完成"
+            fi
+        else
+            log_warn "未知的 SDK: $requested"
+        fi
+    fi
+done
+
+echo ""
+log_info "=== 所有同步操作完成 ==="
+
+if [ "$DRY_RUN" = true ]; then
+    log_warn "这是预演模式，没有实际修改文件"
+    log_info "使用 $0 <sdk> 来执行实际同步"
+fi
