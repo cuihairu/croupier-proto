@@ -67,8 +67,8 @@ jobs:
         working-directory: sdk-go
         run: |
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
           # 固定版本: protoc-gen-go v1.36.11, grpc-go v1.5.1
@@ -155,8 +155,8 @@ jobs:
         working-directory: sdk-python
         run: |
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-python v29.5, grpc-python v1.69.0
@@ -243,8 +243,8 @@ jobs:
         working-directory: sdk-java
         run: |
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-java v29.5, grpc-java v1.69.0
@@ -339,8 +339,8 @@ jobs:
         run: |
           export PATH="$PWD/node_modules/.bin:$PATH"
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf src/gen
           mkdir -p src/gen
           # JS/TS 使用 Connect-ES 2.0 架构，只需要 protoc-gen-es
@@ -418,8 +418,8 @@ jobs:
         working-directory: sdk-cpp
         run: |
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-cpp v29.5, grpc-cpp v1.69.0
@@ -502,8 +502,8 @@ jobs:
         working-directory: sdk-csharp
         run: |
           rm -rf proto
-          mkdir -p proto
-          cp -r ../croupier proto/
+          mkdir -p proto/croupier
+          cp -r ../croupier/sdk proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-csharp v29.5
