@@ -37,6 +37,7 @@ usage() {
     echo "  -p, --path BASE_PATH    指定 SDK 仓库的基础路径 (默认: ../)"
     echo "  -d, --dry-run           预演模式，不执行实际操作"
     echo "  -c, --commit            自动提交生成的代码到 Git (默认: 否)"
+    echo "  --push                 同步后自动推送到远程仓库 (包含 --commit)"
     echo ""
     echo "SDK列表 (逗号分隔):"
     echo "  go, python, java, js, cpp, csharp, server, all"
@@ -48,6 +49,7 @@ usage() {
     echo "  $0 -d cpp               # 预演 C++ SDK 同步"
     echo "  $0 --commit go          # 同步 Go SDK 并自动提交"
     echo "  $0 -c all               # 同步所有 SDK 并自动提交"
+    echo "  $0 --push go            # 同步 Go SDK 并自动提交+推送"
     exit 0
 }
 
@@ -76,6 +78,7 @@ check_command() {
 BASE_PATH="../"
 DRY_RUN=false
 AUTO_COMMIT=false
+AUTO_PUSH=false
 REQUESTED_SDKS=()
 
 while [[ $# -gt 0 ]]; do
@@ -93,6 +96,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         -c|--commit)
             AUTO_COMMIT=true
+            shift
+            ;;
+        --push)
+            AUTO_COMMIT=true
+            AUTO_PUSH=true
             shift
             ;;
         go|python|java|js|cpp|csharp|server|all)
@@ -129,6 +137,7 @@ log_info "=== Croupier SDK 本地同步脚本 ==="
 log_info "基础路径: $BASE_PATH"
 log_info "预演模式: $DRY_RUN"
 log_info "自动提交: $AUTO_COMMIT"
+log_info "自动推送: $AUTO_PUSH"
 echo ""
 
 # 函数：自动提交生成的代码
@@ -161,7 +170,18 @@ auto_commit() {
 - gRPC v1.71.0"
 
     log_info "✓ 已提交到本地仓库"
-    log_warn "  记得手动推送: git push origin main"
+
+    # 如果启用了自动推送
+    if [ "$AUTO_PUSH" = true ]; then
+        log_info "自动推送到远程仓库..."
+        if git push origin main; then
+            log_info "✓ 已推送到远程仓库"
+        else
+            log_error "推送失败，请手动推送: git push origin main"
+        fi
+    else
+        log_warn "  记得手动推送: git push origin main"
+    fi
 }
 sync_go_sdk() {
     local sdk_path="$1"
