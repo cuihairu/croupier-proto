@@ -6,12 +6,12 @@ managed:
     - file_option: go_package_prefix
       value: github.com/cuihairu/croupier/pkg/pb
 plugins:
-  # Go plugins for main package
-  - local: protoc-gen-go
+  # Go plugins for main package (使用固定版本 v1.36.11 对应 protobuf 4.25.x)
+  - remote: buf.build/protocolbuffers/go:v1.36.11
     out: ../pkg/pb
     opt:
       - paths=source_relative
-  - local: protoc-gen-go-grpc
+  - remote: buf.build/grpc/go:v1.5.1
     out: ../pkg/pb
     opt:
       - paths=source_relative

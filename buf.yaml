@@ -13,5 +13,5 @@ breaking:
   use:
     - FILE
 deps:
-  # 固定 protobuf 到 29.x LTS 版本 (对应 protobuf 5.29.x)，确保 C++ 编译兼容性
-  - buf.build/protocolbuffers/wellknowntypes:v29.3
+  # 固定 protobuf 到 v25.1 (对应 protobuf 4.25.x)，确保所有 SDK 兼容性
+  - buf.build/protocolbuffers/wellknowntypes:v25.1
