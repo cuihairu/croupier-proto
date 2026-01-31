@@ -415,24 +415,32 @@ EOF
     find pkg/pb -name "*.pb.go" | wc -l
 }
 
-# 主处理逻辑
-declare -A SDK_MAP
-for sdk_info in "${ALL_SDKS[@]}"; do
-    IFS=':' read -ra PARTS <<< "$sdk_info"
-    repo_name="${PARTS[0]}"
-    sdk_id="${PARTS[1]}"
-    sdk_display="${PARTS[2]}"
-    SDK_MAP["$sdk_id"]="$repo_name|$sdk_display"
-done
+# 函数：获取 SDK 信息
+get_sdk_info() {
+    local sdk_id="$1"
+    for sdk_info in "${ALL_SDKS[@]}"; do
+        IFS=':' read -ra PARTS <<< "$sdk_info"
+        if [ "${PARTS[1]}" = "$sdk_id" ]; then
+            echo "${PARTS[0]}|${PARTS[2]}"
+            return 0
+        fi
+    done
+    return 1
+}
 
 # 处理每个请求的 SDK
 for requested in "${REQUESTED_SDKS[@]}"; do
     if [ "$requested" = "all" ]; then
-        for sdk_id in "${!SDK_MAP[@]}"; do
-            IFS='|' read -ra INFO <<< "${SDK_MAP[$sdk_id]}"
-            repo_name="${INFO[0]}"
-            sdk_display="${INFO[1]}"
+        for sdk_info in "${ALL_SDKS[@]}"; do
+            IFS=':' read -ra PARTS <<< "$sdk_info"
+            repo_name="${PARTS[0]}"
+            sdk_id="${PARTS[1]}"
+            sdk_display="${PARTS[2]}"
 
+            # 确保 BASE_PATH 以斜杠结尾
+            if [[ ! "$BASE_PATH" =~ /$ ]]; then
+                BASE_PATH="${BASE_PATH}/"
+            fi
             sdk_full_path="${BASE_PATH}${repo_name}"
 
             if [ ! -d "$sdk_full_path" ]; then
@@ -461,11 +469,16 @@ for requested in "${REQUESTED_SDKS[@]}"; do
             fi
         done
     else
-        if [ -n "${SDK_MAP[$requested]}" ]; then
-            IFS='|' read -ra INFO <<< "${SDK_MAP[$requested]}"
+        sdk_info=$(get_sdk_info "$requested")
+        if [ -n "$sdk_info" ]; then
+            IFS='|' read -ra INFO <<< "$sdk_info"
             repo_name="${INFO[0]}"
             sdk_display="${INFO[1]}"
 
+            # 确保 BASE_PATH 以斜杠结尾
+            if [[ ! "$BASE_PATH" =~ /$ ]]; then
+                BASE_PATH="${BASE_PATH}/"
+            fi
             sdk_full_path="${BASE_PATH}${repo_name}"
 
             if [ ! -d "$sdk_full_path" ]; then
