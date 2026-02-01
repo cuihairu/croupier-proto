@@ -69,6 +69,8 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf pkg/pb generated
           mkdir -p pkg/pb
           # 固定版本: protoc-gen-go v1.36.11, grpc-go v1.5.1
@@ -157,6 +159,8 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-python v29.5, grpc-python v1.69.0
@@ -245,6 +249,8 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-java v29.5, grpc-java v1.69.0
@@ -341,6 +347,8 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf src/gen
           mkdir -p src/gen
           # JS/TS 使用 Connect-ES 2.0 架构，只需要 protoc-gen-es
@@ -420,6 +428,8 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf generated
           mkdir -p generated
           # 固定版本: protoc-cpp v29.5, grpc-cpp v1.69.0
@@ -504,13 +514,15 @@ jobs:
           rm -rf proto
           mkdir -p proto/croupier
           cp -r ../croupier/sdk proto/croupier/
+          cp -r ../croupier/agent proto/croupier/
+          cp -r ../croupier/control proto/croupier/
           rm -rf generated
           mkdir -p generated
-          # 固定版本: protoc-csharp v29.5
+          # 固定版本: protoc-csharp v25.1
           cat > proto/buf.gen.yaml << 'EOF'
           version: v2
           plugins:
-            - remote: buf.build/protocolbuffers/csharp:v29.5
+            - remote: buf.build/protocolbuffers/csharp:v25.1
               out: generated
           EOF
           cat > proto/buf.yaml << 'EOF'
