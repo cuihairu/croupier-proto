@@ -31,7 +31,7 @@
 
 | SDK | 依赖包 | 版本 | 配置文件 |
 |-----|--------|------|----------|
-| **Java** | protobuf-java | 4.25.1 | build.gradle |
+| **Java** | protobuf-java | 3.25.1 | build.gradle |
 | **Java** | grpc-* | 1.71.0 | build.gradle |
 | **Go** | google.golang.org/protobuf | v1.36.11 | go.mod |
 | **Go** | google.golang.org/grpc | v1.71.0 | go.mod |
