@@ -197,6 +197,8 @@ sync_go_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf pkg/pb generated
     mkdir -p pkg/pb
 
@@ -242,6 +244,8 @@ sync_python_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf generated
     mkdir -p generated
 
@@ -284,6 +288,8 @@ sync_java_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf generated
     mkdir -p generated
 
@@ -327,6 +333,8 @@ sync_js_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf src/gen
     mkdir -p src/gen
 
@@ -368,6 +376,8 @@ sync_cpp_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf generated
     mkdir -p generated
 
@@ -409,6 +419,8 @@ sync_csharp_sdk() {
     rm -rf proto
     mkdir -p proto/croupier
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
+    cp -r "$REPO_ROOT/croupier/control" proto/croupier/
     rm -rf generated
     mkdir -p generated
 
