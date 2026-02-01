@@ -199,7 +199,6 @@ sync_go_sdk() {
     cp -r "$REPO_ROOT/croupier/sdk" proto/croupier/
     cp -r "$REPO_ROOT/croupier/agent" proto/croupier/
     cp -r "$REPO_ROOT/croupier/control" proto/croupier/
-    cp -r "$REPO_ROOT/croupier/function" proto/croupier/
     rm -rf pkg/pb generated
     mkdir -p pkg/pb
 
